@@ -53,7 +53,7 @@ class Layer:
 
 # objects
 class Point:
-    def __init__(self, x, y, data=None):
+    def __init__(self, x=0, y=0, data=None):
         self.pos = pg.Vector2(x, y)
         if data is None:
             data = {}
@@ -74,7 +74,7 @@ class Point3d:
     # NOTE: this DOES NOT handle cases when the point is behind the camera.
     # If the point is behind, it will end up being flipped back to the front.
     
-    def __init__(self, x, y, z, data=None):
+    def __init__(self, x=0, y=0, z=0, data=None):
         self.pos3d = pg.Vector3(x, y, z)
         self.pos = pg.Vector2()
         self.prev_t = -1
@@ -93,10 +93,10 @@ class Point3d:
             return
         self.prev_t = t
         
-        fov = self.data["focal_length"]
+        focal_len = self.data["focal_length"]
         pos3d = self.pos3d - self.data["camera_pos"]
-        x = (pos3d.x * fov) / (pos3d.z + fov)
-        y = (pos3d.y * fov) / (pos3d.z + fov)
+        x = (pos3d.x * focal_len) / (pos3d.z + focal_len)
+        y = (pos3d.y * focal_len) / (pos3d.z + focal_len)
         x += self.data["win_size"].x / 2
         y += self.data["win_size"].y / 2
         self.pos.update(x, y)
@@ -108,9 +108,10 @@ class Point3d:
 
 # ...more category separations?
 class Line:
-    def __init__(self, p1, p2, color="white"):
+    def __init__(self, p1, p2, color="white", width=1):
         self.p1 = p1
         self.p2 = p2
+        self.width = width
         self.color = pg.Color(color)
     
     def __repr__(self):
@@ -120,23 +121,82 @@ class Line:
         self.p1.update(t)
         self.p2.update(t)
     
-    def render(self, target, offset=(0, 0)):
-        pg.draw.line(target, self.color, self.p1.pos, self.p2.pos)
+    def render(self, target):
+        pg.draw.line(target, self.color, self.p1.pos, self.p2.pos, self.width)
 
 
-class Segment:
-    def __init__(self, points, color="white"):
+class Wireframe:
+    def __init__(self, points, color="white", width=1, closed=False):
         self.points = points
         self.color = pg.Color(color)
-        self.closed = False
+        self.width = width
+        self.closed = closed
     
     def __repr__(self):
-        return f"<{self.__class__.__name__}  {len(self.points)} points>"
+        return f"<{self.__class__.__name__} {len(self.points)} points>"
     
     def update(self, t=0):
         for i in self.points:
             i.update(t)
     
-    def render(self, target, offset=(0, 0)):
+    def render(self, target):
         positions = [i.pos for i in self.points]
-        pg.draw.lines(target, self.color, self.closed, positions)
+        pg.draw.lines(target, self.color, self.closed, positions, self.width)
+
+
+class Polygon:
+    def __init__(self, points, color="white", width=0):
+        self.points = points
+        self.width = width
+        self.color = pg.Color(color)
+    
+    def __repr__(self):
+        return f"<{self.__class__.__name__} {len(self.points)} points>"
+    
+    def update(self, t=0):
+        for i in self.points:
+            i.update(t)
+    
+    def render(self, target):
+        positions = [i.pos for i in self.points]
+        pg.draw.polygon(target, self.color, positions, self.width)
+
+
+# circles
+class Circle:
+    def __init__(self, center_point, radius_point=None, color="white", width=1, radius=0):
+        self.center_point = center_point
+        self.radius_point = radius_point
+        self.center = pg.Vector2()
+        self.radius = radius # gets automatically set if radius_point is a Point()
+        self.width = width
+        self.color = pg.Color(color)
+        self.update()
+    
+    def __repr__(self):
+        return f"<{self.__class__.__name__} @ {self.center} r={self.radius:.2f}px>"
+    
+    def update(self, t=0):
+        self.center_point.update(t)
+        self.center = self.center_point.pos
+        if self.radius_point is not None:
+            self.radius_point.update(t)
+            self.radius = self.center.distance_to(self.radius_point.pos)
+    
+    def render(self, target):
+        pg.draw.circle(target, self.color, self.center, self.radius, self.width)
+
+
+class CircleNgon(Circle):
+    def __init__(self, *args, sides=7, angle=0, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.sides = sides
+        self.angle = angle
+    
+    def render(self, target):
+        up = pg.Vector2(0, -self.radius)
+        angle_step = 360 / self.sides
+        points = []
+        for i in range(self.sides):
+            points.append(self.center + up.rotate(i * angle_step + self.angle))
+        pg.draw.polygon(target, self.color, points, self.width)
