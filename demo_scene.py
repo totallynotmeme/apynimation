@@ -12,22 +12,24 @@ filler.fill((0, 0, 0, 10))
 main = Scene(win_size)
 
 
+ground = main.create_layer()
+ground.clear = lambda: ground.surf.blit(filler, (0, 0))
+ground.blit = lambda target: target.blit(ground.surf, (0, 0), None, pg.BLEND_ADD)
+
 ground_data = {
     "focal_length": 250,
     "win_size": pg.Vector2(win_size),
     "camera_pos": pg.Vector3(0, -50, 23),
 }
 
-ground = main.create_layer()
-ground.surf = pg.Surface(main.size)
-ground.clear = lambda: ground.surf.blit(filler, (0, 0))
-ground.blit = lambda target: target.blit(ground.surf, (0, 0), None, pg.BLEND_ADD)
+ground_points = []
+for x in range(-10, 10):
+    x = x * 60 + 30
+    y = 25 - x**2 / 1500
+    for z in range(-10, 10):
+        z *= 20
+        ground_points.append(Point3d(x, y, z, data=ground_data))
 
-ground_points = [
-    Point3d(x*60+30, 0, z*20, data=ground_data)
-    for x in range(-10, 10)
-    for z in range(-10, 10)
-]
 color = (0, 127, 255)
 
 for z in range(20):
@@ -39,13 +41,13 @@ for x in range(20):
 
 
 
+things = main.create_layer()
+
 cube_data = {
     "focal_length": 250,
     "win_size": pg.Vector2(win_size),
     "camera_pos": pg.Vector3(0, 0, -100),
 }
-
-things = main.create_layer()
 
 # cube
 cube_points = [
@@ -68,18 +70,17 @@ sun_color = "yellow"
 sun_sides = 8
 sun_angle = 0
 
-sun_circle_obj = CircleNgon(
+sun_ngon = CircleNgon(
     center_point = sun_point,
     color = sun_color,
     sides = sun_sides,
     radius = 33,
     width = 3
 )
-sun_update_t = 0 # todo: make a Ticker() to do this??
-# sun_ticker = Ticker(step=0.3)
+sun_ticker = Ticker(time=0.3)
 sun_angle_step = 360 / sun_sides
 
-things.add(sun_circle_obj)
+things.add(sun_ngon)
 sun_rays = []
 for i in range(sun_sides):
     line_angle = i * sun_angle_step + sun_angle
@@ -90,45 +91,45 @@ for i in range(sun_sides):
     things.add(sun_line)
 
 
-# todo: move the window handling logic into a Window() class(?)
-pg.init()
-pg.display.set_caption("Test scene")
-canvas = pg.display.set_mode(win_size)
-clock = pg.time.Clock()
+Window.create(win_size, caption="Test scene")
+dt = Window.set_fps(fps)
+Window.scene = main
+# Window.add_event_handler(
+#     MOUSEBUTTONDOWN = mouse_click_handler,
+#     ...
+# )
 
-run = True
-while run:
-    ## animation
+while Window.is_open:
     # cube
     for i in cube_points:
-        i.pos3d.rotate_y_ip(60/fps)
+        i.pos3d.rotate_y_ip(60 * dt)
     
-    cube_data["camera_pos"].y -= sin(main.t) * 69 / fps
+    cube_data["camera_pos"].y -= sin(main.t) * 69 * dt
     
-    # ground
+    # ground 1/2
     for i in ground_points:
-        i.pos3d.y += sin(i.pos3d.x + id(i) + main.t * 3) * 10 / fps
+        i.pos3d.y += sin(i.pos3d.x + i.pos3d.z + main.t * 3) * 10 * dt
     
-    ground_data["camera_pos"].z += 30/fps
+    # ground 2/2 - moving the camera forward and snapping it back when needed
+    ground_data["camera_pos"].z += 30 * dt
     if ground_data["camera_pos"].z >= 42:
         ground_data["camera_pos"].z -= 20
-        # shifting the point positions too
+        # shifting the point height values back across layers
+        # to create the illusion of infinite motion
         for z_from in range(1, 20):
             z_to = z_from-1
             for x in range(20):
                 p1 = ground_points[z_from + x * 20]
                 p2 = ground_points[z_to + x * 20]
                 p2.pos3d.y = p1.pos3d.y
-        # random values for the last layer
+        # resetting height values for the last layer
         for x in range(20):
-            ground_points[x*20 + 19].pos3d.y = 0
+            i = ground_points[x*20 + 19]
+            i.pos3d.y = 25 - i.pos3d.x ** 2 / 1500
     
     # sun
-    # if sun_ticker(main.t):
-    sun_update_t -= 1/fps
-    if sun_update_t < 0:
-        sun_update_t = 0.3
-        sun_circle_obj.angle += 17
+    if sun_ticker.step():
+        sun_ngon.angle += 17
         for ind, i in enumerate(sun_rays):
             line_angle = ind * sun_angle_step + sun_angle - main.t*30
             pos1 = sun_point.pos + pg.Vector2(0, -40).rotate(line_angle)
@@ -136,18 +137,4 @@ while run:
             i.p1.pos.update(pos1)
             i.p2.pos.update(pos2)
     
-    # actual rendering
-    canvas.fill("black")
-    main.render(canvas)
-    
-    pg.display.flip()
-    clock.tick(fps)
-    
-    main.t += 1/fps
-    
-    for ev in pg.event.get():
-        if ev.type == pg.QUIT:
-            run = False
-            break
-
-pg.quit()
+    Window.finish_frame()

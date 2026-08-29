@@ -1,6 +1,69 @@
 import pygame as pg
 
 
+
+DO_LITERALLY_NOTHING = lambda *a, **kwa: None
+
+# setting up the window
+class Window:
+    # no __init__ because pygame doesn't support multiple windows, and
+    # i don't see a point in implementing virtual windows or something
+    is_open = False
+    surface = None
+    clock = None
+    
+    scene = None
+    event_map = {} # todo: make this actually programmable with functions
+    
+    fps = 60 # default
+    dt = 1/60
+    t = 0
+    
+    def create(size, caption="Untitled window", **kwargs):
+        # surely nothing will break if you try to call create() multiple times
+        pg.init()
+        pg.display.set_caption(caption)
+        Window.surface = pg.display.set_mode(size, **kwargs)
+        Window.clock = pg.time.Clock()
+        Window.is_open = True
+    
+    def close(ev=None): # ev argument used for event handling
+        Window.is_open = False
+        pg.quit()
+    
+    def set_fps(fps):
+        Window.fps = fps
+        Window.dt = 1/fps
+        return Window.dt
+    
+    def finish_frame():
+        # rendering
+        Window.clear()
+        if Window.scene is not None:
+            Window.scene.render(Window.surface)
+        Window.post()
+        
+        pg.display.flip()
+        Window.clock.tick(Window.fps)
+        
+        # handling stuff
+        Window.t += Window.dt
+        if Window.scene is not None:
+            Window.scene.t += Window.dt
+        
+        for ev in pg.event.get():
+            Window.event_map.get(ev.type, DO_LITERALLY_NOTHING)(ev)
+    
+    # utility functions that can be overwritten to create special effects
+    def clear(): # runs before the frame is drawn
+        Window.surface.fill("black")
+    
+    def post(): # runs after the frame is drawn, unused by default
+        pass
+
+Window.event_map[pg.QUIT] = Window.close # default
+
+
 # scene stuff
 class Scene:
     def __init__(self, size):
@@ -51,13 +114,11 @@ class Layer:
         target.blit(self.surf, (0, 0))
 
 
-# objects
+# points
 class Point:
     def __init__(self, x=0, y=0, data=None):
         self.pos = pg.Vector2(x, y)
-        if data is None:
-            data = {}
-        self.data = data
+        self.data = data or {}
     
     def __repr__(self):
         return f"<{self.__class__.__name__} @ {self.pos}>"
@@ -71,16 +132,14 @@ class Point:
 
 
 class Point3d:
-    # NOTE: this DOES NOT handle cases when the point is behind the camera.
-    # If the point is behind, it will end up being flipped back to the front.
+    # NOTE: this DOES NOT handle cases when the point is behind the camera
+    # If the point is behind, it will end up being flipped back to the front
     
     def __init__(self, x=0, y=0, z=0, data=None):
         self.pos3d = pg.Vector3(x, y, z)
         self.pos = pg.Vector2()
         self.prev_t = -1
-        if data is None:
-            data = {}
-        self.data = data
+        self.data = data or {}
         
         self.update() # to set self.pos
     
@@ -106,7 +165,7 @@ class Point3d:
         target.set_at(pixel_pos, "white")
 
 
-# ...more category separations?
+# objects that are more useful than points
 class Line:
     def __init__(self, p1, p2, color="white", width=1):
         self.p1 = p1
@@ -200,3 +259,82 @@ class CircleNgon(Circle):
         for i in range(self.sides):
             points.append(self.center + up.rotate(i * angle_step + self.angle))
         pg.draw.polygon(target, self.color, points, self.width)
+
+
+# utility classes that simplify handling the scene logic
+class Ticker:
+    def __init__(self, time, wrap=False, _val=0):
+        self.time = time
+        self.wrap = wrap
+        self._val = _val
+    
+    def __repr__(self):
+        return f"Ticker(time={self.time} wrap={self.wrap} _val={self._val})"
+    
+    def step(self, dt=None):
+        self._val += dt or Window.dt
+        
+        if self._val < self.time:
+            return False # not yet
+        
+        if self.wrap:
+            self._val -= self.time
+        else: # reset the whole thing
+            self._val = 0
+        return True
+
+
+class Tape:
+    """
+    [[placeholder docstring]]
+    an infinite 'tape' of looping values that can be cycled through.
+    
+    example usage:
+    a = Tape([1, 2, 3])
+    for _ in range(6):
+        print(a.next(), end="; ") # 1; 2; 3; 1; 2; 3; 
+    print()
+    for _ in range(5):
+        print(a.prev(), end="; ") # 2; 1; 3; 2; 1; 
+    print()
+    
+    NOTE: this can be imitated with itertools.cycle() using:
+    a = itertools.cycle([1, 2, 3])
+    for _ in range(6):
+        print(next(a), end="; ") # 1; 2; 3; 1; 2; 3; 
+    print()
+    # .prev() function cannot be recreated this way as far as i know
+    """
+    
+    def __init__(self, elements=None, _ind=-1):
+        self.elements = elements or []
+        self.ind = _ind
+    
+    def __repr__(self):
+        return f"<Tape x{len(self.elements)} elements ind={self.ind}>"
+    
+    # these two can probably be merged into a generic .shift()
+    # but i find .prev() and .next() more readable
+    def prev(self, n=1):
+        if not self.elements:
+            return None
+        
+        if self.ind == -1:
+            self.ind = len(self.elements) - 1
+        else:
+            self.ind -= n
+            self.ind %= len(self.elements)
+        
+        return self.elements[self.ind]
+    
+    def next(self, n=1):
+        if not self.elements:
+            return None
+        
+        if self.ind == -1:
+            self.ind = 0
+        else:
+            self.ind += n
+            self.ind %= len(self.elements)
+        
+        return self.elements[self.ind]
