@@ -91,13 +91,25 @@ for i in range(sun_sides):
     things.add(sun_line)
 
 
+click_position = Point()
+click_circle = things.add(Circle(click_position, color=(255, 127, 0), radius=50))
+click_radius = 999
+
+click_limiter = Limiter(1/3)
+def mouse_click_handler(ev):
+    global click_radius
+    if ev.button == pg.BUTTON_LEFT and click_limiter.call():
+        click_position.pos.update(ev.pos)
+        click_radius = 0
+
+
 Window.create(win_size, caption="Test scene")
 dt = Window.set_fps(fps)
 Window.scene = main
-# Window.add_event_handler(
-#     MOUSEBUTTONDOWN = mouse_click_handler,
-#     ...
-# )
+Window.add_event_handler({
+    pg.MOUSEBUTTONDOWN: mouse_click_handler,
+    # ...
+})
 
 while Window.is_open:
     # cube
@@ -136,5 +148,13 @@ while Window.is_open:
             pos2 = sun_point.pos + pg.Vector2(0, -50).rotate(line_angle)
             i.p1.pos.update(pos1)
             i.p2.pos.update(pos2)
+    
+    # click circle
+    click_radius += 50 * dt
+    if click_radius < 50/3:
+        click_circle.radius = click_radius ** 1.5
+        click_circle.width = int(50/3 - click_radius + 1)
+    else:
+        click_circle.radius = 0
     
     Window.finish_frame()

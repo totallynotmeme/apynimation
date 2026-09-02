@@ -1,7 +1,6 @@
 import pygame as pg
 
 
-
 DO_LITERALLY_NOTHING = lambda *a, **kwa: None
 
 # setting up the window
@@ -13,7 +12,7 @@ class Window:
     clock = None
     
     scene = None
-    event_map = {} # todo: make this actually programmable with functions
+    event_map = {}
     
     fps = 60 # default
     dt = 1/60
@@ -53,6 +52,16 @@ class Window:
         
         for ev in pg.event.get():
             Window.event_map.get(ev.type, DO_LITERALLY_NOTHING)(ev)
+    
+    def add_event_handler(new_map, _nowarn=False):
+        Window.event_map.update(new_map)
+        if pg.QUIT in new_map and not _nowarn:
+            msg = """
+[WARN] QUIT event has been overwritten, which might result in an unclosable window.
+If you're writing your own handler, make sure to call Window.close() when you're done.
+Add _nowarn=True parameter to remove this warning
+"""[1:-1]
+            print(msg)
     
     # utility functions that can be overwritten to create special effects
     def clear(): # runs before the frame is drawn
@@ -338,3 +347,33 @@ class Tape:
             self.ind %= len(self.elements)
         
         return self.elements[self.ind]
+
+
+class Limiter:
+    """
+    [[placeholder docstring]]
+    a helper class to ratelimit events
+    
+    example usage:
+    a = Limiter(0.5) # time in seconds
+    def callback(ev):
+        if a.call() and ev.button == pg.BUTTON_LEFT:
+            print("you just left clicked! you can left click again in 0.5s")
+    Window.add_event_handler({pg.MOUSEBUTTONDOWN: callback})
+    """
+    
+    def __init__(self, cooldown, _last_call=None):
+        self.cooldown = cooldown
+        self.last_call = _last_call or -999999999 # float("-inf") doesn't exist
+    
+    def __repr__(self):
+        return f"<Limiter every {self.cooldown}s>"
+    
+    def call(self):
+        dt = Window.t - self.last_call
+        
+        if 0 <= dt < self.cooldown:
+            return False
+        
+        self.last_call = Window.t
+        return True
