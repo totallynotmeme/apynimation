@@ -475,6 +475,13 @@ class Tape:
             self.ind %= len(self.elements)
         
         return self.elements[self.ind]
+    
+    def set(self, element):
+        if element not in self.elements:
+            self.ind = -1
+            return
+        
+        self.ind = self.elements.index(element)
 
 
 class Limiter:

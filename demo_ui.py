@@ -30,6 +30,7 @@ class UI_Button:
             self.label.text = f"~ {self.name} ~"
             if Input.mouse_just_pressed[0]: # left
                 Window.scene = self.scene
+                scene_tape.set(self.scene) # scene_tape defined later
         else:
             self.rect.color = (50, 50, 50)
             self.label.text = self.name
