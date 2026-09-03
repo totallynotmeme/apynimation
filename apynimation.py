@@ -3,6 +3,46 @@ import pygame as pg
 
 DO_LITERALLY_NOTHING = lambda *a, **kwa: None
 
+
+# user inputs
+class Input:
+    mouse_pos = pg.Vector2()
+    mouse_prev_pos = pg.Vector2()
+    mouse_rel = pg.Vector2()
+    mouse_buttons = [False] * 3
+    mouse_just_pressed = [False] * 3
+    mouse_just_released = [False] * 3
+    
+    keyboard_keys = None
+    shift = False
+    ctrl = False
+    alt = False
+    
+    def update():
+        Input.mouse_prev_pos.update(Input.mouse_pos)
+        Input.mouse_pos.update(pg.mouse.get_pos())
+        Input.mouse_rel.update(Input.mouse_pos - Input.mouse_prev_pos)
+        
+        new_buttons = pg.mouse.get_pressed()
+        Input.mouse_just_pressed = [
+            new_buttons[0] and not Input.mouse_buttons[0],
+            new_buttons[1] and not Input.mouse_buttons[1],
+            new_buttons[2] and not Input.mouse_buttons[2],
+        ]
+        Input.mouse_just_released = [
+            not new_buttons[0] and Input.mouse_buttons[0],
+            not new_buttons[1] and Input.mouse_buttons[1],
+            not new_buttons[2] and Input.mouse_buttons[2],
+        ]
+        Input.mouse_buttons = new_buttons
+        
+        Input.keyboard_keys = pg.key.get_pressed()
+        mods = pg.key.get_mods()
+        Input.shift = bool(mods & pg.KMOD_SHIFT)
+        Input.ctrl = bool(mods & pg.KMOD_CTRL)
+        Input.alt = bool(mods & pg.KMOD_ALT)
+
+
 # setting up the window
 class Window:
     # no __init__ because pygame doesn't support multiple windows, and
@@ -12,6 +52,7 @@ class Window:
     clock = None
     
     scene = None
+    global_objects = []
     event_map = {}
     
     fps = 60 # default
@@ -40,6 +81,9 @@ class Window:
         Window.clear()
         if Window.scene is not None:
             Window.scene.render(Window.surface)
+        for obj in Window.global_objects:
+            obj.update(Window.t)
+            obj.render(Window.surface)
         Window.post()
         
         pg.display.flip()
@@ -50,6 +94,7 @@ class Window:
         if Window.scene is not None:
             Window.scene.t += Window.dt
         
+        Input.update()
         for ev in pg.event.get():
             Window.event_map.get(ev.type, DO_LITERALLY_NOTHING)(ev)
     
@@ -230,7 +275,47 @@ class Polygon:
         pg.draw.polygon(target, self.color, positions, self.width)
 
 
-# circles
+# shapes
+class Rect:
+    def __init__(self, p1, p2=None, w=50, h=20, color="white", width=0):
+        self.p1 = p1
+        self.p2 = p2
+        self.w = w
+        self.h = h
+        self.color = color
+        self.width = width # bruh
+        self.rect = pg.Rect(0, 0, 0, 0)
+    
+    def __repr__(self):
+        if self.p2 is None:
+            suffix = f"{self.w}x{self.h}"
+        else:
+            suffix = f"-- {self.p2}"
+        return f"{self.__class__.__name__}  {self.p1} {suffix}"
+    
+    def update(self, t=0):
+        if self.p2 is None:
+            self.p1.update(t)
+            self.x, self.y = self.p1.pos
+        else:
+            self.p1.update(t)
+            self.p2.update(t)
+            points = [self.p1.pos, self.p2.pos]
+            left, right = sorted(i.x for i in points)
+            top, bottom = sorted(i.y for i in points)
+            self.x = left
+            self.y = top
+            self.w = right - left
+            self.h = bottom - top # 0 is up, 100 is down
+        self.rect.update(self.x, self.y, self.w, self.h)
+    
+    def render(self, target):
+        pg.draw.rect(target, self.color, self.rect, self.width)
+    
+    def collidepoint(self, point):
+        return self.rect.collidepoint(point)
+
+
 class Circle:
     def __init__(self, center_point, radius_point=None, color="white", width=1, radius=0):
         self.center_point = center_point
@@ -253,6 +338,9 @@ class Circle:
     
     def render(self, target):
         pg.draw.circle(target, self.color, self.center, self.radius, self.width)
+    
+    def collidepoint(self, point): # name based on pygame.Rect.collidepoint
+        return self.center.distance_to(point) <= self.radius
 
 
 class CircleNgon(Circle):
@@ -268,6 +356,46 @@ class CircleNgon(Circle):
         for i in range(self.sides):
             points.append(self.center + up.rotate(i * angle_step + self.angle))
         pg.draw.polygon(target, self.color, points, self.width)
+
+
+# something other than vector graphics
+class Sprite: # (pg.sprite.Sprite)
+    def __init__(self, pos=(0, 0), point=None, surface=None, align="topleft"):
+        self.pos = pg.Vector2(pos)
+        self.point = point
+        self.surface = surface
+        self.align = align
+    
+    def __repr__(self):
+        return f"<{self.__class__.__name__} @ {self.pos}>"
+    
+    def update(self, t=0):
+        if self.point is not None:
+            self.point.update(t)
+            self.pos.update(self.point.pos)
+    
+    def render(self, target):
+        pos = self.surface.get_rect(**{self.align: self.pos})
+        target.blit(self.surface, pos)
+
+
+pg.font.init() # required for fonts to work
+class Text(Sprite):
+    def __init__(self, font, text="[...]", color="white", **kwargs):
+        surface = font.render(text, True, color)
+        super().__init__(surface=surface, **kwargs)
+        
+        self.text = text
+        self.font = font
+        self.color = color
+        self._prev_render = (self.font, self.text, self.color)
+    
+    def update(self, t=0):
+        super().update(t)
+        this_render = (self.font, self.text, self.color)
+        if self._prev_render != this_render:
+            self._prev_render = this_render
+            self.surface = self.font.render(self.text, True, self.color)
 
 
 # utility classes that simplify handling the scene logic
