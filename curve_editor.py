@@ -5,8 +5,8 @@ fps = 144
 
 
 class Viewport:
-    w = win_size[1]
-    h = win_size[1] // 2
+    w = win_size[1] - 50
+    h = win_size[1] - 50
     x_from = 0
     x_to = 1
     y_from = 0
@@ -24,6 +24,21 @@ class Viewport:
             point.y = 0
         elif point.y > Viewport.h:
             point.y = Viewport.h
+
+    def set_value(name, val):
+        if name == "x_from":
+            Viewport.x_from = val
+        if name == "y_from":
+            Viewport.y_from = val
+        if name == "x_to":
+            Viewport.x_to = val
+        if name == "y_to":
+            Viewport.y_to = val
+
+        if Viewport.x_to <= Viewport.x_from:
+            Viewport.x_to = Viewport.x_from + 0.01
+        if Viewport.y_to <= Viewport.y_from:
+            Viewport.y_to = Viewport.y_from + 0.01
 
 
 class CurvePoint(Point):
@@ -53,9 +68,12 @@ class CurvePoint(Point):
 main = Scene(win_size)
 layer = main.create_layer()
 
+preview_point = Point()
+preview_circle = layer.add(Circle(preview_point, color="red", radius=7, width=0))
+
 points = list(layer.add(
     CurvePoint(0, Viewport.h),
-    CurvePoint(Viewport.w/2, Viewport.h/1.1),
+    CurvePoint(Viewport.w*0.5, Viewport.h*0.72),
     CurvePoint(Viewport.w, 0),
 ))
 curve = Curve(points)
@@ -66,9 +84,6 @@ layer.add(wireframe)
 edge_l = Line(Point(), Point())
 edge_r = Line(Point(), Point())
 layer.add(edge_l, edge_r)
-
-preview_point = Point()
-preview_circle = layer.add(Circle(preview_point, color="red", radius=5, width=0))
 
 trail = Sprite((0, win_size[1] - 20))
 trail.surface = pg.Surface((win_size[0], 20))
@@ -93,8 +108,8 @@ label_x_to._value = "x_to"
 label_y_to._value = "y_to"
 
 
-export_button = Rect(Point(Viewport.w + 60, 120), w=250, h=60)
-export_button.update() # setting .rect.center
+export_button = Rect(Point(Viewport.w + 30, 120), w=250, h=60)
+export_button.update() # setting up .rect.center
 button_origin = export_button.rect.center
 
 font = pg.font.SysFont("consolas", 20)
@@ -106,8 +121,8 @@ def click_handler(ev):
     if ev.button == pg.BUTTON_LEFT:
         # handling text labels
         if Viewport.editing_what:
-            # cancel editing (simulate ESC press)
-            keyboard_handler("_ESC")
+            # cancel editing (simulate fake keyboard press)
+            keyboard_handler("_RETURN")
         for i in labels:
             if i.collidepoint(Input.mouse_pos):
                 Viewport.editing_what = i
@@ -152,21 +167,26 @@ def unclick_handler(ev):
 def keyboard_handler(ev):
     if Viewport.editing_what is None:
         return
-    #  vvvvvvvvvvvv to allow fake events
-    if ev == "_ESC" or ev.key == pg.K_ESCAPE:
-        Viewport.editing_what.color = "white"
-        Viewport.editing_what = None
-        return
-    if ev.key == pg.K_RETURN:
+    #  vvvvvvvvvvvvvvv to allow fake events
+    if ev == "_RETURN" or ev.key == pg.K_RETURN:
         # try/except can be replaced with some int.isfloat() but i cba
         try:
             val = float(Viewport.editing_text)
             val_name = Viewport.editing_what._value
-            setattr(Viewport, val_name, val)
+            Viewport.set_value(val_name, val)
         except:
             pass
         Viewport.editing_what.color = "white"
         Viewport.editing_what = None
+        return
+    if ev.key == pg.K_ESCAPE:
+        Viewport.editing_what.color = "white"
+        Viewport.editing_what = None
+        return
+    if ev.key == pg.K_BACKSPACE:
+        if Input.shift:
+            Viewport.editing_text = ""
+        Viewport.editing_text = Viewport.editing_text[:-1]
         return
     if ev.unicode:
         Viewport.editing_text += ev.unicode
@@ -199,22 +219,22 @@ while Window.is_open:
     if export_button.collidepoint(Input.mouse_pos):
         export_button.color = (60, 60, 20)
         if Input.mouse_just_pressed[0]: # left
-            print("my_curve = Curve(")
+            print("my_curve = Curve([")
             x_ratio = (Viewport.x_to - Viewport.x_from) / Viewport.w
             y_ratio = (Viewport.y_to - Viewport.y_from) / Viewport.h
             x_offset = Viewport.x_from
             y_offset = Viewport.y_from
             for i in points:
                 x = i.pos.x * x_ratio + x_offset
-                y = i.pos.y * y_ratio + y_offset
+                y = (Viewport.h - i.pos.y) * y_ratio + y_offset
                 print(f"    Point({x}, {y}),")
-            print(")")
+            print("])")
             export_label.text = "Exported to console!"
     else:
         export_button.color = (40, 40, 40)
 
     time_unit = Viewport.x_to - Viewport.x_from
-    left_edge.pos.x = win_size[0] - time_unit * 5 * fps
+    left_edge.pos.x = win_size[0] - time_unit * 2 * fps
 
     x = (Window.t / time_unit % 1) * Viewport.w
     y = curve.get(x)
@@ -227,7 +247,7 @@ while Window.is_open:
     factor = min(max(100 - y*100 / Viewport.h, 0), 100)
     color.hsva = (200, 100, factor, 100)
     # evil hack to shift the trail surface left
-    pg.draw.rect(trail.surface, color, (win_size[0]-5, 0, 5, 20))
-    trail.surface.blit(trail.surface, (-5, 0))
+    pg.draw.rect(trail.surface, color, (win_size[0]-2, 0, 5, 20))
+    trail.surface.blit(trail.surface, (-2, 0))
 
     Window.finish_frame()
