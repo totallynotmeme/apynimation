@@ -524,6 +524,26 @@ class Limiter:
 class Curve:
     """
     [[placeholder docstring]]
+    a helper class for animating values using a "piecewise linear function"
+    (aka points connected with straight lines)
+    
+    example usage:
+    a = Curve([
+        Point(0, 100),
+        Point(1, 250),
+        Point(2, 250),
+        Point(3, 100),
+    ])
+    circle = Circle(...)
+    # inside the window loop
+    while Window.is_open:
+        circle.radius = a.get(Window.t % 4)
+        Window.finish_frame()
+    # this will animate the circle radius as:
+    # 0-1s - growing from 100px to 250px
+    # 1-2s - staying at 250px
+    # 2-3s - shrinking from 250px to 100px
+    # 3-4s - staying at 100px
     """
 
     def __init__(self, points):
