@@ -84,8 +84,8 @@ things.add(sun_ngon)
 sun_rays = []
 for i in range(sun_sides):
     line_angle = i * sun_angle_step + sun_angle
-    pos1 = sun_point.pos + pg.Vector2(0, -40).rotate(line_angle)
-    pos2 = sun_point.pos + pg.Vector2(0, -50).rotate(line_angle)
+    pos1 = sun_point + pg.Vector2(0, -40).rotate(line_angle)
+    pos2 = sun_point + pg.Vector2(0, -50).rotate(line_angle)
     sun_line = Line(Point(*pos1), Point(*pos2), color=sun_color, width=3)
     sun_rays.append(sun_line)
     things.add(sun_line)
@@ -99,7 +99,7 @@ click_limiter = Limiter(1/3)
 def mouse_click_handler(ev):
     global click_radius
     if ev.button == pg.BUTTON_LEFT and click_limiter.call():
-        click_position.pos.update(ev.pos)
+        click_position.update(ev.pos)
         click_radius = 0
 
 
@@ -144,10 +144,10 @@ while Window.is_open:
         sun_ngon.angle += 17
         for ind, i in enumerate(sun_rays):
             line_angle = ind * sun_angle_step + sun_angle - main.t*30
-            pos1 = sun_point.pos + pg.Vector2(0, -40).rotate(line_angle)
-            pos2 = sun_point.pos + pg.Vector2(0, -50).rotate(line_angle)
-            i.p1.pos.update(pos1)
-            i.p2.pos.update(pos2)
+            pos1 = sun_point + pg.Vector2(0, -40).rotate(line_angle)
+            pos2 = sun_point + pg.Vector2(0, -50).rotate(line_angle)
+            i.p1.update(pos1)
+            i.p2.update(pos2)
     
     # click circle
     click_radius += 50 * dt

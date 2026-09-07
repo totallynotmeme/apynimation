@@ -21,7 +21,7 @@ class UI_Button:
         self.label = Text(font=UI_Button.font, text=name, point=center, align="center")
         UI_Button._ind += 1
     
-    def update(self, t):
+    def step(self, t):
         if Window.scene == self.scene:
             self.rect.color = (75, 100, 150)
             self.label.text = f"> {self.name} <"
@@ -34,8 +34,8 @@ class UI_Button:
         else:
             self.rect.color = (50, 50, 50)
             self.label.text = self.name
-        self.rect.update(t)
-        self.label.update(t)
+        self.rect.step(t)
+        self.label.step(t)
     
     def render(self, target):
         self.rect.render(target)
@@ -79,10 +79,10 @@ cursor_layer.add(Text(font, text="Try left clicking somewhere", pos=(230, 20)))
 # trail
 cursor_trail = Line(Point(), Point(), width=5)
 
-def _update(t=0):
-    cursor_trail.p1.pos.update(Input.mouse_pos)
-    cursor_trail.p2.pos.update(Input.mouse_prev_pos)
-cursor_trail.update = _update
+def _step(t=0):
+    cursor_trail.p1.update(Input.mouse_pos)
+    cursor_trail.p2.update(Input.mouse_prev_pos)
+cursor_trail.step = _step
 
 cursor_layer.add(cursor_trail)
 
@@ -96,7 +96,7 @@ click_limiter = Limiter(1/3)
 def mouse_click_handler(ev):
     global click_radius
     if ev.button == pg.BUTTON_LEFT and click_limiter.call():
-        click_position.pos.update(ev.pos)
+        click_position.update(ev.pos)
         click_radius = 0
 
 
@@ -162,7 +162,7 @@ other_layer = other_demo.create_layer()
 Window.global_objects.append(UI_Button("Other", other_demo))
 
 center_point = Point(win_size)
-center_point.pos /= 2
+center_point /= 2
 ngons = [
     CircleNgon(center_point, width=1, radius=50, sides=5),
     CircleNgon(center_point, width=3, radius=100, sides=6),

@@ -47,22 +47,22 @@ class CurvePoint(Point):
         self.pulse_t = 999
         self.dragging = False
 
-    def update(self, t=0):
+    def step(self, t=0):
         self.pulse_t += 50 * dt
         if self.dragging:
-            self.pos.update(Input.mouse_pos)
-            Viewport.keep_in_view(self.pos)
+            self.update(Input.mouse_pos)
+            Viewport.keep_in_view(self)
 
     def render(self, target):
-        pg.draw.circle(target, "white", self.pos, 20, 1)
-        pg.draw.circle(target, "white", self.pos, 5)
+        pg.draw.circle(target, "white", self, 20, 1)
+        pg.draw.circle(target, "white", self, 5)
         if self.pulse_t < 50/3:
             radius = 15 * self.pulse_t ** 0.5
             width = int(50/3 - self.pulse_t + 1)
-            pg.draw.circle(target, "white", self.pos, radius, width)
+            pg.draw.circle(target, "white", self, radius, width)
 
     def collidepoint(self, point):
-        return self.pos.distance_to(point) < 20
+        return self.distance_to(point) < 20
 
 
 main = Scene(win_size)
@@ -109,7 +109,7 @@ label_y_to._value = "y_to"
 
 
 export_button = Rect(Point(Viewport.w + 30, 120), w=250, h=60)
-export_button.update() # setting up .rect.center
+export_button.step() # setting up .rect.center
 button_origin = export_button.rect.center
 
 font = pg.font.SysFont("consolas", 20)
@@ -140,7 +140,7 @@ def click_handler(ev):
                 layer.add(new)
                 points.append(new)
                 new.dragging = True
-                new.update()
+                new.step()
                 curve.update_points()
     if ev.button == pg.BUTTON_RIGHT:
         # remove a point
@@ -225,8 +225,8 @@ while Window.is_open:
             x_offset = Viewport.x_from
             y_offset = Viewport.y_from
             for i in points:
-                x = i.pos.x * x_ratio + x_offset
-                y = (Viewport.h - i.pos.y) * y_ratio + y_offset
+                x = i.x * x_ratio + x_offset
+                y = (Viewport.h - i.y) * y_ratio + y_offset
                 print(f"    Point({x}, {y}),")
             print("])")
             export_label.text = "Exported to console!"
@@ -234,15 +234,15 @@ while Window.is_open:
         export_button.color = (40, 40, 40)
 
     time_unit = Viewport.x_to - Viewport.x_from
-    left_edge.pos.x = win_size[0] - time_unit * 2 * fps
+    left_edge.x = win_size[0] - time_unit * 2 * fps
 
     x = (Window.t / time_unit % 1) * Viewport.w
     y = curve.get(x)
-    preview_point.pos.update(x, y)
-    edge_l.p1.pos.update(0, points[0].pos.y)
-    edge_l.p2.pos.update(points[0].pos)
-    edge_r.p2.pos.update(Viewport.w, points[-1].pos.y)
-    edge_r.p1.pos.update(points[-1].pos)
+    preview_point.update(x, y)
+    edge_l.p1.update(0, points[0].y)
+    edge_l.p2.update(points[0])
+    edge_r.p2.update(Viewport.w, points[-1].y)
+    edge_r.p1.update(points[-1])
 
     factor = min(max(100 - y*100 / Viewport.h, 0), 100)
     color.hsva = (200, 100, factor, 100)

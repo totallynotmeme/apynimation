@@ -18,7 +18,7 @@ class Input:
     ctrl = False
     alt = False
 
-    def update():
+    def step():
         Input.mouse_prev_pos.update(Input.mouse_pos)
         Input.mouse_pos.update(pg.mouse.get_pos())
         Input.mouse_rel.update(Input.mouse_pos - Input.mouse_prev_pos)
@@ -82,7 +82,7 @@ class Window:
         if Window.scene is not None:
             Window.scene.render(Window.surface)
         for obj in Window.global_objects:
-            obj.update(Window.t)
+            obj.step(Window.t)
             obj.render(Window.surface)
         Window.post()
 
@@ -94,7 +94,7 @@ class Window:
         if Window.scene is not None:
             Window.scene.t += Window.dt
 
-        Input.update()
+        Input.step()
         for ev in pg.event.get():
             Window.event_map.get(ev.type, DO_LITERALLY_NOTHING)(ev)
 
@@ -151,7 +151,7 @@ class Layer:
         self.clear()
 
         for obj in self.objects:
-            obj.update(t)
+            obj.step(t)
             obj.render(self.surf)
 
         self.blit(target)
@@ -171,38 +171,36 @@ class Layer:
 
 
 # points
-class Point:
-    def __init__(self, x=0, y=0, data=None):
-        self.pos = pg.Vector2(x, y)
-        self.data = data or {}
+class Point(pg.Vector2):
+    # Vector2's __init__ works here, no need to re-define it
 
     def __repr__(self):
-        return f"<{self.__class__.__name__} @ {self.pos}>"
+        return f"<{self.__class__.__name__} @ ({self.x}, {self.y})>"
 
-    def update(self, t=0):
+    def step(self, t=0):
+        # overwrite this function to automatically update the point based on time
         pass
 
     def render(self, target):
-        pixel_pos = (int(self.pos.x), int(self.pos.y))
+        pixel_pos = (int(self.x), int(self.y))
         target.set_at(pixel_pos, "white")
 
 
-class Point3d:
+class Point3d(Point):
     # NOTE: this DOES NOT handle cases when the point is behind the camera
     # If the point is behind, it will end up being flipped back to the front
 
     def __init__(self, x=0, y=0, z=0, data=None):
         self.pos3d = pg.Vector3(x, y, z)
-        self.pos = pg.Vector2()
-        self.prev_t = -1
         self.data = data or {}
+        self.prev_t = -1
 
-        self.update() # to set self.pos
+        self.step() # to set self.x and self.y
 
     def __repr__(self):
         return f"<{self.__class__.__name__} @ {self.pos3d}>"
 
-    def update(self, t=0):
+    def step(self, t=0):
         # micro-optimization to prevent it from recomputing the same point 100 times
         if self.prev_t == t:
             return
@@ -210,15 +208,10 @@ class Point3d:
 
         focal_len = self.data["focal_length"]
         pos3d = self.pos3d - self.data["camera_pos"]
-        x = (pos3d.x * focal_len) / (pos3d.z + focal_len)
-        y = (pos3d.y * focal_len) / (pos3d.z + focal_len)
-        x += self.data["win_size"].x / 2
-        y += self.data["win_size"].y / 2
-        self.pos.update(x, y)
-
-    def render(self, target):
-        pixel_pos = (int(self.pos.x), int(self.pos.y))
-        target.set_at(pixel_pos, "white")
+        self.x = (pos3d.x * focal_len) / (pos3d.z + focal_len)
+        self.y = (pos3d.y * focal_len) / (pos3d.z + focal_len)
+        self.x += self.data["win_size"].x / 2
+        self.y += self.data["win_size"].y / 2
 
 
 # objects that are more useful than points
@@ -232,49 +225,41 @@ class Line:
     def __repr__(self):
         return f"<{self.__class__.__name__}  {self.p1} -- {self.p2}>"
 
-    def update(self, t=0):
-        self.p1.update(t)
-        self.p2.update(t)
+    def step(self, t=0):
+        if isinstance(self.p1, Point):
+            self.p1.step(t)
+        if isinstance(self.p2, Point):
+            self.p2.step(t)
 
     def render(self, target):
-        pg.draw.line(target, self.color, self.p1.pos, self.p2.pos, self.width)
-
-
-class Wireframe:
-    def __init__(self, points, color="white", width=1, closed=False):
-        self.points = points
-        self.color = pg.Color(color)
-        self.width = width
-        self.closed = closed
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__} {len(self.points)} points>"
-
-    def update(self, t=0):
-        for i in self.points:
-            i.update(t)
-
-    def render(self, target):
-        positions = [i.pos for i in self.points]
-        pg.draw.lines(target, self.color, self.closed, positions, self.width)
+        pg.draw.line(target, self.color, self.p1, self.p2, self.width)
 
 
 class Polygon:
     def __init__(self, points, color="white", width=0):
         self.points = points
-        self.width = width
         self.color = pg.Color(color)
+        self.width = width
 
     def __repr__(self):
         return f"<{self.__class__.__name__} {len(self.points)} points>"
 
-    def update(self, t=0):
+    def step(self, t=0):
         for i in self.points:
-            i.update(t)
+            if isinstance(i, Point):
+                i.step(t)
 
     def render(self, target):
-        positions = [i.pos for i in self.points]
-        pg.draw.polygon(target, self.color, positions, self.width)
+        pg.draw.polygon(target, self.color, self.points, self.width)
+
+
+class Wireframe(Polygon):
+    def __init__(self, points, color="white", width=1, closed=False):
+        super().__init__(points, color=color, width=width)
+        self.closed = closed
+
+    def render(self, target):
+        pg.draw.lines(target, self.color, self.closed, self.points, self.width)
 
 
 # shapes
@@ -295,14 +280,17 @@ class Rect:
             suffix = f"-- {self.p2}"
         return f"{self.__class__.__name__}  {self.p1} {suffix}"
 
-    def update(self, t=0):
+    def step(self, t=0):
         if self.p2 is None:
-            self.p1.update(t)
-            self.x, self.y = self.p1.pos
+            if isinstance(self.p1, Point):
+                self.p1.step(t)
+            self.x, self.y = self.p1
         else:
-            self.p1.update(t)
-            self.p2.update(t)
-            points = [self.p1.pos, self.p2.pos]
+            if isinstance(self.p1, Point):
+                self.p1.step(t)
+            if isinstance(self.p2, Point):
+                self.p2.step(t)
+            points = [self.p1, self.p2]
             left, right = sorted(i.x for i in points)
             top, bottom = sorted(i.y for i in points)
             self.x = left
@@ -326,17 +314,19 @@ class Circle:
         self.radius = radius # gets automatically set if radius_point is a Point()
         self.width = width
         self.color = pg.Color(color)
-        self.update()
+        self.step()
 
     def __repr__(self):
         return f"<{self.__class__.__name__} @ {self.center} r={self.radius:.2f}px>"
 
-    def update(self, t=0):
-        self.center_point.update(t)
-        self.center = self.center_point.pos
+    def step(self, t=0):
+        if isinstance(self.center_point, Point):
+            self.center_point.step(t)
+        self.center.update(self.center_point)
         if self.radius_point is not None:
-            self.radius_point.update(t)
-            self.radius = self.center.distance_to(self.radius_point.pos)
+            if isinstance(self.radius_point, Point):
+                self.radius_point.step(t)
+            self.radius = self.center.distance_to(self.radius_point)
 
     def render(self, target):
         pg.draw.circle(target, self.color, self.center, self.radius, self.width)
@@ -372,10 +362,11 @@ class Sprite: # (pg.sprite.Sprite)
     def __repr__(self):
         return f"<{self.__class__.__name__} @ {self.pos}>"
 
-    def update(self, t=0):
+    def step(self, t=0):
         if self.point is not None:
-            self.point.update(t)
-            self.pos.update(self.point.pos)
+            if isinstance(self.point, Point):
+                self.point.step(t)
+            self.pos.update(self.point)
 
     def render(self, target):
         pos = self.surface.get_rect(**{self.align: self.pos})
@@ -397,8 +388,8 @@ class Text(Sprite):
         self.color = color
         self._prev_render = (self.font, self.text, self.color)
 
-    def update(self, t=0):
-        super().update(t)
+    def step(self, t=0):
+        super().step(t)
         this_render = (self.font, self.text, self.color)
         if self._prev_render != this_render:
             self._prev_render = this_render
@@ -484,11 +475,10 @@ class Tape:
         return self.elements[self.ind]
 
     def set(self, element):
-        if element not in self.elements:
+        if element in self.elements:
+            self.ind = self.elements.index(element)
+        else:
             self.ind = -1
-            return
-
-        self.ind = self.elements.index(element)
 
 
 class Limiter:
@@ -526,7 +516,8 @@ class Curve:
     [[placeholder docstring]]
     a helper class for animating values using a "piecewise linear function"
     (aka points connected with straight lines)
-    
+    a curve must have at least 1 point, although it's only useful with 2 or more
+
     example usage:
     a = Curve([
         Point(0, 100),
@@ -551,16 +542,16 @@ class Curve:
         self.update_points()
 
     def update_points(self):
-        self.points.sort(key=lambda vec: vec.pos.x)
+        self.points.sort(key=lambda vec: vec.x)
 
     def get(self, val):
-        if val <= self.points[0].pos.x:
-            return self.points[0].pos.y
-        if val >= self.points[-1].pos.x:
-            return self.points[-1].pos.y
+        if val <= self.points[0].x:
+            return self.points[0].y
+        if val >= self.points[-1].x:
+            return self.points[-1].y
 
         for prev_p, next_p in zip(self.points, self.points[1:]):
-            if val < next_p.pos.x:
-                dist = next_p.pos.x - prev_p.pos.x
-                f = (val - prev_p.pos.x) / dist
-                return next_p.pos.y * f + prev_p.pos.y * (1-f)
+            if val < next_p.x:
+                dist = next_p.x - prev_p.x
+                f = (val - prev_p.x) / dist
+                return next_p.y * f + prev_p.y * (1-f)
