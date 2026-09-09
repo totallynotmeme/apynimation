@@ -1,9 +1,6 @@
 import pygame as pg
 
 
-DO_LITERALLY_NOTHING = lambda *a, **kwa: None
-
-
 # user inputs
 class Input:
     mouse_pos = pg.Vector2()
@@ -70,6 +67,7 @@ class Window:
     def close(ev=None): # ev argument used for event handling
         Window.is_open = False
         pg.quit()
+        return True
 
     def set_fps(fps):
         Window.fps = fps
@@ -96,7 +94,18 @@ class Window:
 
         Input.step()
         for ev in pg.event.get():
-            Window.event_map.get(ev.type, DO_LITERALLY_NOTHING)(ev)
+            func = Window.event_map.get(ev.type)
+            if func is not None:
+                if func(ev):
+                    # event handled by Window, don't pass through to scene
+                    continue
+
+            # pass event to Scene if it's set
+            if Window.scene is None:
+                continue
+            func = Window.scene.event_map.get(ev.type)
+            if func is not None:
+                func(ev)
 
     def add_event_handler(new_map, _nowarn=False):
         Window.event_map.update(new_map)
@@ -124,6 +133,7 @@ class Scene:
         self.t = 0
         self.size = size
         self.layers = []
+        self.event_map = {}
 
     def __repr__(self):
         return f"<{self.__class__.__name__} {len(self.layers)} layers>"
@@ -136,6 +146,10 @@ class Scene:
         a = Layer(self.size)
         self.layers.append(a)
         return a
+
+    def add_event_handler(self, new_map, _nowarn=False):
+        # _nowarn to keep parity between Window and Scene, unused here
+        self.event_map.update(new_map)
 
 
 # layers

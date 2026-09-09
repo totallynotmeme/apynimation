@@ -99,6 +99,10 @@ def mouse_click_handler(ev):
         click_position.update(ev.pos)
         click_radius = 0
 
+cursor_demo.add_event_handler({
+    pg.MOUSEBUTTONDOWN: mouse_click_handler,
+})
+
 
 ## 3d scene
 donut_demo = Scene(win_size)
@@ -188,7 +192,6 @@ def keyboard_handler(ev):
 
 
 Window.add_event_handler({
-    pg.MOUSEBUTTONDOWN: mouse_click_handler,
     pg.KEYDOWN: keyboard_handler,
 })
 
