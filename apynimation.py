@@ -555,3 +555,41 @@ class Curve:
                 dist = next_p.x - prev_p.x
                 f = (val - prev_p.x) / dist
                 return next_p.y * f + prev_p.y * (1-f)
+
+
+class Timer:
+    """
+    [[placeholder docstring]]
+    a class for making something happen after a certain amount of time
+
+    example usage:
+    a = Timer(3)
+    a.start()
+    while Window.is_open:
+        if a.step():
+            print("The timer has finished!")
+        Window.finish_frame()
+    """
+
+    def __init__(self, time):
+        self.time = time
+        self.trigger_at = -1
+
+    def __repr__(self):
+        return f"<Timer {self.time}s>"
+
+    def start(self, restart=False):
+        if not restart and self.trigger_at >= 0:
+            return False
+
+        self.trigger_at = Window.t + self.time
+        return True
+
+    def step(self):
+        if self.trigger_at < 0:
+            return False
+
+        if Window.t >= self.trigger_at:
+            self.trigger_at = -1
+            return True
+        return False
