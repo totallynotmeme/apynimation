@@ -1,7 +1,7 @@
 from apynimation import *
 
 win_size = (1600, 900)
-fps = 144
+fps = 60
 
 
 class Viewport:

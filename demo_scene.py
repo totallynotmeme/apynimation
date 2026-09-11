@@ -3,7 +3,7 @@ from math import sin
 
 
 win_size = (1600, 900)
-fps = 144
+fps = 60
 
 # used for the blur effect. might make this into a Layer subclass later(?)
 filler = pg.Surface(win_size, pg.SRCALPHA)
