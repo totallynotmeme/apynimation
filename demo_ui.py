@@ -1,7 +1,7 @@
 from apynimation import *
 
 win_size = (1600, 900)
-fps = 144
+fps = 60
 
 
 # creating a custom class to reduce repetition
@@ -175,6 +175,7 @@ ngons = [
 ]
 for i in ngons:
     other_layer.add(i)
+    i.original_sides = i.sides # storing the original sides count
 
 
 # switching scenes with Tab
@@ -221,10 +222,13 @@ while Window.is_open:
     
     # rotating the n-gon circles
     for i in ngons:
-        spin = (i.sides - 6.5) * 45 * dt
+        spin = (i.original_sides - 6.5) * 45 * dt
         i.angle += spin
         # slow down when hovered
         if i.collidepoint(Input.mouse_pos):
             i.angle -= spin / 2
+            i.sides = lerp(i.sides, i.original_sides-2, dt*10)
+        else:
+            i.sides = lerp(i.sides, i.original_sides, dt*10)
     
     Window.finish_frame()

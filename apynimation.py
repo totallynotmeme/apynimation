@@ -1,4 +1,10 @@
 import pygame as pg
+from math import ceil
+
+
+# helper functions / aliases to existing functions for easier access
+# ceil - imported above
+lerp = pg.math.lerp
 
 
 # user inputs
@@ -359,7 +365,7 @@ class CircleNgon(Circle):
         up = pg.Vector2(0, -self.radius)
         angle_step = 360 / self.sides
         points = []
-        for i in range(self.sides):
+        for i in range(ceil(self.sides)):
             points.append(self.center + up.rotate(i * angle_step + self.angle))
         pg.draw.polygon(target, self.color, points, self.width)
 
