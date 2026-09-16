@@ -37,9 +37,9 @@ class UI_Button:
         self.rect.step(t)
         self.label.step(t)
     
-    def render(self, target):
-        self.rect.render(target)
-        self.label.render(target)
+    def draw(self, target):
+        self.rect.draw(target)
+        self.label.draw(target)
 
 
 ## about this demo

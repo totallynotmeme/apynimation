@@ -53,7 +53,7 @@ class CurvePoint(Point):
             self.update(Input.mouse_pos)
             Viewport.keep_in_view(self)
 
-    def render(self, target):
+    def draw(self, target):
         pg.draw.circle(target, "white", self, 20, 1)
         pg.draw.circle(target, "white", self, 5)
         if self.pulse_t < 50/3:

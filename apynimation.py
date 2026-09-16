@@ -84,10 +84,10 @@ class Window:
         # rendering
         Window.clear()
         if Window.scene is not None:
-            Window.scene.render(Window.surface)
+            Window.scene.draw(Window.surface)
         for obj in Window.global_objects:
             obj.step(Window.t)
-            obj.render(Window.surface)
+            obj.draw(Window.surface)
         Window.post()
 
         pg.display.flip()
@@ -144,9 +144,9 @@ class Scene:
     def __repr__(self):
         return f"<{self.__class__.__name__} {len(self.layers)} layers>"
 
-    def render(self, target):
+    def draw(self, target):
         for layer in self.layers:
-            layer.render(target, t=self.t)
+            layer.draw(target, t=self.t)
 
     def create_layer(self):
         a = Layer(self.size)
@@ -167,12 +167,12 @@ class Layer:
     def __repr__(self):
         return f"<{self.__class__.__name__} {len(self.objects)} objects>"
 
-    def render(self, target, t=0):
+    def draw(self, target, t=0):
         self.clear()
 
         for obj in self.objects:
             obj.step(t)
-            obj.render(self.surf)
+            obj.draw(self.surf)
 
         self.blit(target)
 
@@ -201,7 +201,7 @@ class Point(pg.Vector2):
         # overwrite this function to automatically update the point based on time
         pass
 
-    def render(self, target):
+    def draw(self, target):
         pixel_pos = (int(self.x), int(self.y))
         target.set_at(pixel_pos, "white")
 
@@ -251,7 +251,7 @@ class Line:
         if isinstance(self.p2, Point):
             self.p2.step(t)
 
-    def render(self, target):
+    def draw(self, target):
         pg.draw.line(target, self.color, self.p1, self.p2, self.width)
 
 
@@ -269,7 +269,7 @@ class Polygon:
             if isinstance(i, Point):
                 i.step(t)
 
-    def render(self, target):
+    def draw(self, target):
         pg.draw.polygon(target, self.color, self.points, self.width)
 
 
@@ -278,7 +278,7 @@ class Wireframe(Polygon):
         super().__init__(points, color=color, width=width)
         self.closed = closed
 
-    def render(self, target):
+    def draw(self, target):
         pg.draw.lines(target, self.color, self.closed, self.points, self.width)
 
 
@@ -319,7 +319,7 @@ class Rect:
             self.h = bottom - top # 0 is up, 100 is down
         self.rect.update(self.x, self.y, self.w, self.h)
 
-    def render(self, target):
+    def draw(self, target):
         pg.draw.rect(target, self.color, self.rect, self.width)
 
     def collidepoint(self, point):
@@ -348,7 +348,7 @@ class Circle:
                 self.radius_point.step(t)
             self.radius = self.center.distance_to(self.radius_point)
 
-    def render(self, target):
+    def draw(self, target):
         pg.draw.circle(target, self.color, self.center, self.radius, self.width)
 
     def collidepoint(self, point): # name based on pygame.Rect.collidepoint
@@ -361,7 +361,7 @@ class CircleNgon(Circle):
         self.sides = sides
         self.angle = angle
 
-    def render(self, target):
+    def draw(self, target):
         up = pg.Vector2(0, -self.radius)
         angle_step = 360 / self.sides
         points = []
@@ -388,7 +388,7 @@ class Sprite: # (pg.sprite.Sprite)
                 self.point.step(t)
             self.pos.update(self.point)
 
-    def render(self, target):
+    def draw(self, target):
         pos = self.surface.get_rect(**{self.align: self.pos})
         new_rect = target.blit(self.surface, pos)
         self.rect.update(new_rect)
