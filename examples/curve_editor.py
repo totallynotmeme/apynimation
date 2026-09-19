@@ -1,3 +1,6 @@
+import sys # modifying sys.path to import from parent directory
+sys.path.append("..")
+
 from apynimation import *
 
 win_size = (1600, 900)
