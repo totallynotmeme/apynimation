@@ -1,3 +1,6 @@
+import sys # modifying sys.path to import from parent directory
+sys.path.append("..")
+
 from apynimation import *
 from math import sin
 
