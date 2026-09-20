@@ -80,11 +80,11 @@ Window.global_objects.append(UI_Button("Cursor", cursor_demo))
 cursor_layer.add(Text(font, text="Try left clicking somewhere", pos=(230, 20)))
 
 # trail
-cursor_trail = Line(Point(), Point(), width=5)
+cursor_trail_points = Trail(fps // 6)
+cursor_trail = Wireframe(cursor_trail_points.items, width=5)
 
 def _step(t=0):
-    cursor_trail.p1.update(Input.mouse_pos)
-    cursor_trail.p2.update(Input.mouse_prev_pos)
+    cursor_trail_points.put(Input.mouse_pos.copy())
 cursor_trail.step = _step
 
 cursor_layer.add(cursor_trail)
