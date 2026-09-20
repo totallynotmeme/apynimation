@@ -214,6 +214,7 @@ class Point3d(Point):
         self.pos3d = pg.Vector3(x, y, z)
         self.data = data or {}
         self.prev_t = -1
+        self.valid = False
 
         self.step() # to set self.x and self.y
 
@@ -228,10 +229,17 @@ class Point3d(Point):
 
         focal_len = self.data["focal_length"]
         pos3d = self.pos3d - self.data["camera_pos"]
+        # TODO: make it work properly for z<0, or fallback to an unset value?
+        # or even move this out to apynimation_3d submodule/addon/thing???
+        if pos3d.z + focal_len <= 0:
+            self.valid = False
+            return
+
         self.x = (pos3d.x * focal_len) / (pos3d.z + focal_len)
         self.y = (pos3d.y * focal_len) / (pos3d.z + focal_len)
         self.x += self.data["win_size"].x / 2
         self.y += self.data["win_size"].y / 2
+        self.valid = True
 
 
 # objects that are more useful than points
@@ -270,6 +278,8 @@ class Polygon:
                 i.step(t)
 
     def draw(self, target):
+        if len(self.points) < 2:
+            return
         pg.draw.polygon(target, self.color, self.points, self.width)
 
 
@@ -279,6 +289,8 @@ class Wireframe(Polygon):
         self.closed = closed
 
     def draw(self, target):
+        if len(self.points) < 2:
+            return
         pg.draw.lines(target, self.color, self.closed, self.points, self.width)
 
 
@@ -613,3 +625,40 @@ class Timer:
             self.trigger_at = -1
             return True
         return False
+
+
+class Trail:
+    """
+    [[placeholder docstring]]
+    a class for listing the last few objects put. most useful for drawing trails
+
+    NOTE: when used to store points, it's recommended to use point.copy(),
+    otherwise the trail might not work properly.
+
+    example usage:
+    trail = Trail(100)
+    # draw lines between the points
+    scene_layer.add(Wireframe(trail.items))
+    while Window.is_open:
+        # use current mouse position as the new point
+        trail.put(Input.mouse_pos.copy())
+        Window.finish_frame()
+    """
+
+    def __init__(self, size):
+        self.items = []
+        self.size = size
+
+    def __repr__(self):
+        return f"<Trail {len(self.items)}/{self.size} items>"
+
+    def put(self, value):
+        if len(self.items) < self.size:
+            self.items.insert(0, value)
+        else:
+            # [0, 1, 2] -> [new, 0, 1] and throw away 2
+            self.items[1:] = self.items[:-1]
+            self.items[0] = value
+
+    def clear(self):
+        self.items.clear()
