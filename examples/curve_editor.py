@@ -2,6 +2,7 @@ import sys # modifying sys.path to import from parent directory
 sys.path.append("..")
 
 from apynimation import *
+from apynimation import logic
 
 win_size = (1600, 900)
 fps = 60
@@ -79,7 +80,7 @@ points = list(layer.add(
     CurvePoint(Viewport.w*0.5, Viewport.h*0.72),
     CurvePoint(Viewport.w, 0),
 ))
-curve = Curve(points)
+curve = logic.Curve(points)
 
 wireframe = Wireframe(points)
 layer.add(wireframe)

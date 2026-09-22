@@ -2,6 +2,7 @@ import sys # modifying sys.path to import from parent directory
 sys.path.append("..")
 
 from apynimation import *
+from apynimation import logic
 from math import sin
 
 
@@ -80,7 +81,7 @@ sun_ngon = CircleNgon(
     radius = 33,
     width = 3
 )
-sun_ticker = Ticker(time=0.3)
+sun_ticker = logic.Ticker(time=0.3)
 sun_angle_step = 360 / sun_sides
 
 things.add(sun_ngon)
@@ -98,7 +99,7 @@ click_position = Point()
 click_circle = things.add(Circle(click_position, color=(255, 127, 0), radius=50))
 click_radius = 999
 
-click_limiter = Limiter(1/3)
+click_limiter = logic.Limiter(1/3)
 def mouse_click_handler(ev):
     global click_radius
     if ev.button == pg.BUTTON_LEFT and click_limiter.call():

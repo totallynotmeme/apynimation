@@ -2,6 +2,7 @@ import sys # modifying sys.path to import from parent directory
 sys.path.append("..")
 
 from apynimation import *
+from apynimation import logic
 
 win_size = (1600, 900)
 fps = 60
@@ -80,7 +81,7 @@ Window.global_objects.append(UI_Button("Cursor", cursor_demo))
 cursor_layer.add(Text(font, text="Try left clicking somewhere", pos=(230, 20)))
 
 # trail
-cursor_trail_points = Trail(fps // 6)
+cursor_trail_points = logic.Trail(fps // 6)
 cursor_trail = Wireframe(cursor_trail_points.items, width=5)
 
 def _step(t=0):
@@ -94,7 +95,7 @@ click_position = Point()
 click_circle = cursor_layer.add(Circle(click_position, color=(0, 127, 255), radius=50))
 click_radius = 999
 
-click_limiter = Limiter(1/3)
+click_limiter = logic.Limiter(1/3)
 
 def mouse_click_handler(ev):
     global click_radius
@@ -182,7 +183,7 @@ for i in ngons:
 
 
 # switching scenes with Tab
-scene_tape = Tape(
+scene_tape = logic.Tape(
     [about_demo, cursor_demo, donut_demo, layers_demo, other_demo],
     _ind=0 # we already have about_demo selected by default
 )
