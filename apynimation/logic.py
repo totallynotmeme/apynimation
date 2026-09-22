@@ -1,5 +1,5 @@
-# /apynimation/__init__.py
-# contains basic objects and classes for creating a functional window
+# /apynimation/logic.py
+# has most classes that simplify handling the scene logic
 # v0.0.0-indev  /  use current commit as the version
 
 from . import Window
