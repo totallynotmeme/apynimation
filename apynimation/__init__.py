@@ -1,3 +1,7 @@
+# /apynimation/__init__.py
+# contains basic objects and classes for creating a functional window
+# v0.0.0-indev  /  use current commit as the version
+
 import pygame as pg
 from math import ceil
 
