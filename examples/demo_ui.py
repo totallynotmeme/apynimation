@@ -3,53 +3,58 @@ sys.path.append("..")
 
 from apynimation import *
 from apynimation import logic
+from apynimation import ui
 
 win_size = (1600, 900)
 fps = 60
 
 
 # creating a custom class to reduce repetition
-class UI_Button:
+class Scene_button(ui.Button):
     _ind = 0
     font = pg.font.SysFont("consolas", 20)
-    
+    theme = ui.Theme((20, 60, 100))
+
     def __init__(self, name, scene):
         self.name = name
         self.scene = scene
-        
+
         x = 110
-        y = UI_Button._ind * 60 + 35
+        y = Scene_button._ind * 60 + 35
         center = Point(x, y)
         topleft = Point(x-100, y-25)
-        self.rect = Rect(topleft, w=200, h=50)
-        self.label = Text(font=UI_Button.font, text=name, point=center, align="center")
-        UI_Button._ind += 1
-    
+
+        Scene_button._ind += 1
+        self.label = Text(font=Scene_button.font, text=name, point=center, align="center")
+        super().__init__(topleft, (200, 50), theme=Scene_button.theme)
+
+    def callback(self):
+        Window.scene = self.scene
+        scene_tape.set(self.scene) # scene_tape defined later
+
     def step(self, t):
+        super().step(t)
         if Window.scene == self.scene:
-            self.rect.color = (75, 100, 150)
+            self.color = self.theme.dark
+        if self.state == ui.STATE_HOLDING:
             self.label.text = f"> {self.name} <"
-        elif self.rect.collidepoint(Input.mouse_pos):
-            self.rect.color = (100, 100, 50)
+        elif self.state == ui.STATE_HOVERING:
             self.label.text = f"~ {self.name} ~"
-            if Input.mouse_just_pressed[0]: # left
-                Window.scene = self.scene
-                scene_tape.set(self.scene) # scene_tape defined later
         else:
-            self.rect.color = (50, 50, 50)
             self.label.text = self.name
-        self.rect.step(t)
         self.label.step(t)
-    
+
     def draw(self, target):
-        self.rect.draw(target)
+        super().draw(target)
+        if Window.scene == self.scene:
+            pg.draw.rect(target, (200, 200, 75), self.rect, 2, *self.rect_corner_args)
         self.label.draw(target)
 
 
 ## about this demo
 about_demo = Scene(win_size)
 about_layer = about_demo.create_layer()
-Window.global_objects.append(UI_Button("About", about_demo))
+Window.global_objects.append(Scene_button("About", about_demo))
 
 font = pg.font.SysFont("consolas", 35)
 about_layer.add(Text(font, text="This is a simple interactive demo!", pos=(230, 20)))
@@ -76,7 +81,7 @@ for ind, i in enumerate(lines):
 ## cursor demo scene
 cursor_demo = Scene(win_size)
 cursor_layer = cursor_demo.create_layer()
-Window.global_objects.append(UI_Button("Cursor", cursor_demo))
+Window.global_objects.append(Scene_button("Cursor", cursor_demo))
 
 cursor_layer.add(Text(font, text="Try left clicking somewhere", pos=(230, 20)))
 
@@ -111,7 +116,7 @@ cursor_demo.add_event_handler({
 ## 3d scene
 donut_demo = Scene(win_size)
 donut_layer = donut_demo.create_layer()
-Window.global_objects.append(UI_Button("3D donut", donut_demo))
+Window.global_objects.append(Scene_button("3D donut", donut_demo))
 
 camera_data = {
     "focal_length": 350,
@@ -134,7 +139,7 @@ donut_layer.add(Wireframe(donut_points, closed=True))
 
 ## layers demo
 layers_demo = Scene(win_size)
-Window.global_objects.append(UI_Button("Layer effects", layers_demo))
+Window.global_objects.append(Scene_button("Layer effects", layers_demo))
 font = pg.font.SysFont("consolas", 40)
 
 layers_text_pos = pg.Vector2(250, 0) # using one Vector2 to replace sin() and cos()
@@ -167,7 +172,7 @@ layers_demo_l1.clear = _clear
 ## other stuff (only n-gons so far)
 other_demo = Scene(win_size)
 other_layer = other_demo.create_layer()
-Window.global_objects.append(UI_Button("Other", other_demo))
+Window.global_objects.append(Scene_button("Other", other_demo))
 
 center_point = Point(win_size)
 center_point /= 2
@@ -213,17 +218,17 @@ while Window.is_open:
         click_circle.width = int(50/3 - click_radius + 1)
     else:
         click_circle.radius = 0
-    
+
     # spinning donut
     for i in donut_points:
         i.pos3d.rotate_x_ip(60 * dt)
         i.pos3d.rotate_z_ip(60 * dt)
-    
+
     # moving the texts
     layers_text_pos.rotate_ip(60 * dt)
     layers_text_l1.pos.update(300, layers_text_pos.y + 400)
     layers_text_l2.pos.update(900, layers_text_pos.x + 400)
-    
+
     # rotating the n-gon circles
     for i in ngons:
         spin = (i.original_sides - 6.5) * 45 * dt
@@ -234,5 +239,5 @@ while Window.is_open:
             i.sides = lerp(i.sides, i.original_sides-2, dt*10)
         else:
             i.sides = lerp(i.sides, i.original_sides, dt*10)
-    
+
     Window.finish_frame()
