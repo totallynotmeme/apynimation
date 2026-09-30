@@ -1,6 +1,3 @@
-import sys # modifying sys.path to import from parent directory
-sys.path.append("..")
-
 from apynimation import *
 from apynimation import logic
 from apynimation import ui
@@ -52,12 +49,11 @@ class Scene_button(ui.Button):
 
 
 ## about this demo
-about_demo = Scene(win_size)
-about_layer = about_demo.create_layer()
-Window.global_objects.append(Scene_button("About", about_demo))
+about_demo = Scene()
+Window.objects.append(Scene_button("About", about_demo))
 
 font = pg.font.SysFont("consolas", 35)
-about_layer.add(Text(font, text="This is a simple interactive demo!", pos=(230, 20)))
+about_demo.add(Text(font, text="This is a simple interactive demo!", pos=(230, 20)))
 
 lines = [
     "This abomination is a pygame-based library i made for myself to",
@@ -75,15 +71,14 @@ for ind, i in enumerate(lines):
     if i == "":
         continue
     y = ind * 35 + 100
-    about_layer.add(Text(font, text=i, pos=(240, y)))
+    about_demo.add(Text(font, text=i, pos=(240, y)))
 
 
 ## cursor demo scene
-cursor_demo = Scene(win_size)
-cursor_layer = cursor_demo.create_layer()
-Window.global_objects.append(Scene_button("Cursor", cursor_demo))
+cursor_demo = Scene()
+Window.add(Scene_button("Cursor", cursor_demo))
 
-cursor_layer.add(Text(font, text="Try left clicking somewhere", pos=(230, 20)))
+cursor_demo.add(Text(font, text="Try left clicking somewhere", pos=(230, 20)))
 
 # trail
 cursor_trail_points = logic.Trail(fps // 6)
@@ -93,11 +88,11 @@ def _step(t=0):
     cursor_trail_points.put(Input.mouse_pos.copy())
 cursor_trail.step = _step
 
-cursor_layer.add(cursor_trail)
+cursor_demo.add(cursor_trail)
 
 # click bubble
 click_position = Point()
-click_circle = cursor_layer.add(Circle(click_position, color=(0, 127, 255), radius=50))
+click_circle = cursor_demo.add(Circle(click_position, color=(0, 127, 255), radius=50))
 click_radius = 999
 
 click_limiter = logic.Limiter(1/3)
@@ -114,9 +109,8 @@ cursor_demo.add_event_handler({
 
 
 ## 3d scene
-donut_demo = Scene(win_size)
-donut_layer = donut_demo.create_layer()
-Window.global_objects.append(Scene_button("3D donut", donut_demo))
+donut_demo = Scene()
+Window.add(Scene_button("3D donut", donut_demo))
 
 camera_data = {
     "focal_length": 350,
@@ -132,14 +126,14 @@ for angle_x in range(0, 360, 360 // 15):
     up = pg.Vector3(0, 250 + r_add, z_offset)
     for angle_z in range(0, 360, 360 // 15):
         pos = up.rotate_z(angle_z)
-        a = donut_layer.add(Point3d(pos, data=camera_data))
+        a = donut_demo.add(Point3d(pos, data=camera_data))
         donut_points.append(a)
-donut_layer.add(Wireframe(donut_points, closed=True))
+donut_demo.add(Wireframe(donut_points, closed=True))
 
 
 ## layers demo
-layers_demo = Scene(win_size)
-Window.global_objects.append(Scene_button("Layer effects", layers_demo))
+layers_demo = Scene(win_size) # using win_size here to enable layers
+Window.add(Scene_button("Layer effects", layers_demo))
 font = pg.font.SysFont("consolas", 40)
 
 layers_text_pos = pg.Vector2(250, 0) # using one Vector2 to replace sin() and cos()
@@ -170,9 +164,8 @@ layers_demo_l1.clear = _clear
 
 
 ## other stuff (only n-gons so far)
-other_demo = Scene(win_size)
-other_layer = other_demo.create_layer()
-Window.global_objects.append(Scene_button("Other", other_demo))
+other_demo = Scene()
+Window.add(Scene_button("Other", other_demo))
 
 center_point = Point(win_size)
 center_point /= 2
@@ -183,7 +176,7 @@ ngons = [
     CircleNgon(center_point, width=2, radius=200, sides=8, color=(0, 127, 255)),
 ]
 for i in ngons:
-    other_layer.add(i)
+    other_demo.add(i)
     i.original_sides = i.sides # storing the original sides count
 
 
@@ -193,6 +186,7 @@ scene_tape = logic.Tape(
     _ind=0 # we already have about_demo selected by default
 )
 
+
 def keyboard_handler(ev):
     if ev.key == pg.K_TAB:
         if Input.shift:
@@ -200,11 +194,9 @@ def keyboard_handler(ev):
         else:
             Window.scene = scene_tape.next()
 
-
 Window.add_event_handler({
     pg.KEYDOWN: keyboard_handler,
 })
-
 
 Window.create(win_size, caption="Basic UI demo")
 Window.scene = about_demo

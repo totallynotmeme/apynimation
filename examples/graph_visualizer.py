@@ -1,6 +1,3 @@
-import sys # modifying sys.path to import from parent directory
-sys.path.append("..")
-
 from apynimation import *
 import random
 
@@ -103,9 +100,8 @@ class Node(Point):
         self.size = len(self.children) * 5 + 50
 
 
-main_scene = Scene(win_size)
-Window.scene = main_scene
-nodes = main_scene.create_layer()
+nodes = Scene()
+Window.scene = nodes
 
 base_node = Node()
 base_node.val = "."

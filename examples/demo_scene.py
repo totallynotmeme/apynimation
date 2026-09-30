@@ -1,6 +1,3 @@
-import sys # modifying sys.path to import from parent directory
-sys.path.append("..")
-
 from apynimation import *
 from apynimation import logic
 from math import sin
@@ -13,7 +10,7 @@ fps = 60
 filler = pg.Surface(win_size, pg.SRCALPHA)
 filler.fill((0, 0, 0, 10))
 
-main = Scene(win_size)
+main = Scene()
 
 
 ground = main.create_layer()
@@ -44,9 +41,6 @@ for x in range(20):
     ground.add(Wireframe([ground_points[i] for i in inds], color))
 
 
-
-things = main.create_layer()
-
 cube_data = {
     "focal_length": 250,
     "win_size": pg.Vector2(win_size),
@@ -66,7 +60,7 @@ edges = [
     (0, 4), (1, 5), (2, 6), (3, 7),
 ]
 for i, j in edges:
-    things.add(Line(cube_points[i], cube_points[j], width=3))
+    main.add(Line(cube_points[i], cube_points[j], width=3))
 
 # sun-ish thing
 sun_point = Point(80, 65)
@@ -84,7 +78,7 @@ sun_ngon = CircleNgon(
 sun_ticker = logic.Ticker(time=0.3)
 sun_angle_step = 360 / sun_sides
 
-things.add(sun_ngon)
+main.add(sun_ngon)
 sun_rays = []
 for i in range(sun_sides):
     line_angle = i * sun_angle_step + sun_angle
@@ -92,11 +86,11 @@ for i in range(sun_sides):
     pos2 = sun_point + pg.Vector2(0, -50).rotate(line_angle)
     sun_line = Line(Point(*pos1), Point(*pos2), color=sun_color, width=3)
     sun_rays.append(sun_line)
-    things.add(sun_line)
+    main.add(sun_line)
 
 
 click_position = Point()
-click_circle = things.add(Circle(click_position, color=(255, 127, 0), radius=50))
+click_circle = main.add(Circle(click_position, color=(255, 127, 0), radius=50))
 click_radius = 999
 
 click_limiter = logic.Limiter(1/3)

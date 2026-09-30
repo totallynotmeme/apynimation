@@ -1,6 +1,3 @@
-import sys # modifying sys.path to import from parent directory
-sys.path.append("..")
-
 from apynimation import *
 from apynimation import logic
 
@@ -44,6 +41,13 @@ class Viewport:
         if Viewport.y_to <= Viewport.y_from:
             Viewport.y_to = Viewport.y_from + 0.01
 
+    def collidepoint(point):
+        if point.x < 0 or point.y < 0:
+            return False
+        if point.x > Viewport.w or point.y > Viewport.h:
+            return False
+        return True
+
 
 class CurvePoint(Point):
     def __init__(self, *args, **kwargs):
@@ -69,13 +73,12 @@ class CurvePoint(Point):
         return self.distance_to(point) < 20
 
 
-main = Scene(win_size)
-layer = main.create_layer()
+main = Scene()
 
 preview_point = Point()
-preview_circle = layer.add(Circle(preview_point, color="red", radius=7, width=0))
+preview_circle = main.add(Circle(preview_point, color="red", radius=7, width=0))
 
-points = list(layer.add(
+points = list(main.add(
     CurvePoint(0, Viewport.h),
     CurvePoint(Viewport.w*0.5, Viewport.h*0.72),
     CurvePoint(Viewport.w, 0),
@@ -83,20 +86,20 @@ points = list(layer.add(
 curve = logic.Curve(points)
 
 wireframe = Wireframe(points)
-layer.add(wireframe)
+main.add(wireframe)
 
 edge_l = Line(Point(), Point())
 edge_r = Line(Point(), Point())
-layer.add(edge_l, edge_r)
+main.add(edge_l, edge_r)
 
 trail = Sprite((0, win_size[1] - 20))
 trail.surface = pg.Surface((win_size[0], 20))
-layer.add(trail)
+main.add(trail)
 
 left_edge = Point(0, win_size[1]-25) # x gets set later in the code
 right_edge = Point(win_size[0], win_size[1]-25)
 unit_length = Line(left_edge, right_edge, width=3)
-layer.add(unit_length)
+main.add(unit_length)
 
 
 font = pg.font.SysFont("consolas", 25)
@@ -104,7 +107,7 @@ label_x_from = Text(font, pos=(Viewport.w+30, 15))
 label_x_to = Text(font, pos=(Viewport.w+350, 15))
 label_y_from = Text(font, pos=(Viewport.w+30, 45))
 label_y_to = Text(font, pos=(Viewport.w+350, 45))
-labels = layer.add(label_x_from, label_x_to, label_y_from, label_y_to)
+labels = main.add(label_x_from, label_x_to, label_y_from, label_y_to)
 
 label_x_from._value = "x_from"
 label_y_from._value = "y_from"
@@ -118,7 +121,7 @@ button_origin = export_button.rect.center
 
 font = pg.font.SysFont("consolas", 20)
 export_label = Text(font, "Export curve points", pos=button_origin, align="center")
-layer.add(export_button, export_label)
+main.add(export_button, export_label)
 
 
 def click_handler(ev):
@@ -138,10 +141,10 @@ def click_handler(ev):
                 i.dragging = True
                 break
         else: # no points were hit
-            if Input.shift:
+            if Viewport.collidepoint(Input.mouse_pos):
                 # create a new point
                 new = CurvePoint()
-                layer.add(new)
+                main.add(new)
                 points.append(new)
                 new.dragging = True
                 new.step()
@@ -153,7 +156,7 @@ def click_handler(ev):
         for i in points:
             if i.collidepoint(Input.mouse_pos):
                 points.remove(i)
-                layer.objects.remove(i)
+                main.remove(i)
                 curve.update_points()
                 break
 

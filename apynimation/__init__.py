@@ -50,27 +50,69 @@ class Input:
         Input.alt = bool(mods & pg.KMOD_ALT)
 
 
-# setting up the window
-class Window:
+# some base classes
+class Container:
+    # object capable of containing steppable and drawable objects
+    def __init__(self):
+        self.objects = []
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__} {len(self.objects)} objects>"
+
+    def step(self, t=0):
+        for obj in self.objects:
+            obj.step(t)
+
+    def draw(self, target):
+        for obj in self.objects:
+            obj.draw(target)
+
+    def add(self, *objects):
+        self.objects.extend(objects)
+        if len(objects) == 1:
+            return objects[0]
+        return objects
+
+    def remove(self, *objects):
+        for obj in objects:
+            if obj in self.objects:
+                self.objects.remove(obj)
+
+
+class Drawable:
+    def step(self, t=0):
+        return NotImplemented
+
+    def draw(self, target):
+        return NotImplemented
+
+
+# if there's a window in Windows, is there a linu in Linux?
+class Window(Container):
     # no __init__ because pygame doesn't support multiple windows, and
     # i don't see a point in implementing virtual windows or something
     is_open = False
     surface = None
     clock = None
 
+    # maybe refactor later?
+    _container = Container()
+    objects = _container.objects
+    add = _container.add
+    remove = _container.remove
+
     scene = None
-    global_objects = []
     event_map = {}
 
     fps = 60 # default
     dt = 1/60
     t = 0
 
-    def create(size, caption="Untitled window", **kwargs):
+    def create(size, *args, caption="Untitled window", **kwargs):
         # surely nothing will break if you try to call create() multiple times
         pg.init()
         pg.display.set_caption(caption)
-        Window.surface = pg.display.set_mode(size, **kwargs)
+        Window.surface = pg.display.set_mode(size, *args, **kwargs)
         Window.clock = pg.time.Clock()
         Window.is_open = True
 
@@ -88,12 +130,14 @@ class Window:
         # rendering
         Window.clear()
         if Window.scene is not None:
+            Window.scene.step(Window.t)
             Window.scene.draw(Window.surface)
-        for obj in Window.global_objects:
+
+        for obj in Window.objects:
             obj.step(Window.t)
             obj.draw(Window.surface)
-        Window.post()
 
+        Window.post()
         pg.display.flip()
         Window.clock.tick(Window.fps)
 
@@ -137,12 +181,13 @@ Add _nowarn=True parameter to remove this warning
 Window.event_map[pg.QUIT] = Window.close # default
 
 
-# scene stuff
-class Scene:
-    def __init__(self, size):
+# actually usable containers
+class Scene(Container):
+    def __init__(self, size=None):
         self.t = 0
         self.size = size
         self.layers = []
+        self.objects = []
         self.event_map = {}
 
     def __repr__(self):
@@ -152,8 +197,15 @@ class Scene:
         for layer in self.layers:
             layer.draw(target, t=self.t)
 
-    def create_layer(self):
-        a = Layer(self.size)
+        for obj in self.objects:
+            obj.step(self.t)
+            obj.draw(target)
+
+    def create_layer(self, *args, **kwargs):
+        if self.size is None:
+            raise ValueError(f"{self} has no size. Use Scene(win_size) to enable layers")
+
+        a = Layer(self.size, *args, **kwargs)
         self.layers.append(a)
         return a
 
@@ -163,13 +215,10 @@ class Scene:
 
 
 # layers
-class Layer:
-    def __init__(self, size):
+class Layer(Container):
+    def __init__(self, size, _surface_flags=pg.SRCALPHA):
         self.objects = []
-        self.surf = pg.Surface(size, pg.SRCALPHA)
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__} {len(self.objects)} objects>"
+        self.surf = pg.Surface(size, _surface_flags)
 
     def draw(self, target, t=0):
         self.clear()
@@ -179,12 +228,6 @@ class Layer:
             obj.draw(self.surf)
 
         self.blit(target)
-
-    def add(self, *objects):
-        self.objects.extend(objects)
-        if len(objects) == 1:
-            return objects[0]
-        return objects
 
     # utility functions that can be overwritten to create layer-specific effects
     def clear(self):
@@ -247,7 +290,7 @@ class Point3d(Point):
 
 
 # objects that are more useful than points
-class Line:
+class Line(Drawable):
     def __init__(self, p1, p2, color="white", width=1):
         self.p1 = p1
         self.p2 = p2
@@ -267,7 +310,7 @@ class Line:
         pg.draw.line(target, self.color, self.p1, self.p2, self.width)
 
 
-class Polygon:
+class Polygon(Drawable):
     def __init__(self, points, color="white", width=0):
         self.points = points
         self.color = pg.Color(color)
@@ -299,7 +342,7 @@ class Wireframe(Polygon):
 
 
 # shapes
-class Rect:
+class Rect(Drawable):
     def __init__(self, p1, p2=None, w=50, h=20, color="white", width=0):
         self.p1 = p1
         self.p2 = p2
@@ -342,7 +385,7 @@ class Rect:
         return self.rect.collidepoint(point)
 
 
-class Circle:
+class Circle(Drawable):
     def __init__(self, center_point, radius_point=None, color="white", width=1, radius=0):
         self.center_point = center_point
         self.radius_point = radius_point
@@ -387,7 +430,7 @@ class CircleNgon(Circle):
 
 
 # something other than vector graphics
-class Sprite: # (pg.sprite.Sprite)
+class Sprite(Drawable):
     def __init__(self, pos=(0, 0), point=None, surface=None, align="topleft"):
         self.pos = pg.Vector2(pos)
         self.point = point

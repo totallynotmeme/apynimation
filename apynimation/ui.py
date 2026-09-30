@@ -3,7 +3,7 @@
 # v0.0.0-indev  /  use current commit as the version
 
 import pygame as pg
-from . import Input
+from . import Input, Drawable
 
 
 class Theme:
@@ -33,7 +33,7 @@ STATE_IDLE = 0
 STATE_HOVERING = 1
 STATE_HOLDING = 2
 
-class Button:
+class Button(Drawable):
     rect_width = 0
     rect_corner_args = (5,)
 
