@@ -10,7 +10,7 @@ fps = 60
 filler = pg.Surface(win_size, pg.SRCALPHA)
 filler.fill((0, 0, 0, 10))
 
-main = Scene()
+main = Scene(win_size)
 
 
 ground = main.create_layer()
