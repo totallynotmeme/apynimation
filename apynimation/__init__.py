@@ -216,11 +216,25 @@ class Scene(Container):
 
 # layers
 class Layer(Container):
+    DISABLE_BUFFER = False
+
     def __init__(self, size, _surface_flags=pg.SRCALPHA):
+        self.active = True
         self.objects = []
         self.surf = pg.Surface(size, _surface_flags)
 
     def draw(self, target, t=0):
+        if not self.active:
+            return
+
+        if self.DISABLE_BUFFER:
+            # removes the overhead of blitting a buffer surface,
+            # but doesn't allow pre- and post-effects
+            for obj in self.objects:
+                obj.step(t)
+                obj.draw(target)
+            return
+
         self.clear()
 
         for obj in self.objects:
