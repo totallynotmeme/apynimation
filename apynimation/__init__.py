@@ -108,11 +108,11 @@ class Window(Container):
     dt = 1/60
     t = 0
 
-    def create(size, *args, caption="Untitled window", **kwargs):
+    def create(size, caption="Untitled window", **kwargs):
         # surely nothing will break if you try to call create() multiple times
         pg.init()
         pg.display.set_caption(caption)
-        Window.surface = pg.display.set_mode(size, *args, **kwargs)
+        Window.surface = pg.display.set_mode(size, **kwargs)
         Window.clock = pg.time.Clock()
         Window.is_open = True
 
