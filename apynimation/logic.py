@@ -3,6 +3,7 @@
 # v0.0.0-indev  /  use current commit as the version
 
 from . import Window
+from bisect import bisect_right
 
 
 class Ticker:
@@ -127,12 +128,12 @@ class Curve:
     a curve must have at least 1 point, although it's only useful with 2 or more
 
     example usage:
-    a = Curve([
-        Point(0, 100),
-        Point(1, 250),
-        Point(2, 250),
-        Point(3, 100),
-    ])
+    a = Curve({
+        0: 100,
+        1: 250,
+        2: 250,
+        3: 100,
+    })
     circle = Circle(...)
     # inside the window loop
     while Window.is_open:
@@ -150,19 +151,24 @@ class Curve:
         self.update_points()
 
     def update_points(self):
-        self.points.sort(key=lambda vec: vec.x)
+        self._bisect_points = sorted(self.points.keys())
 
     def get(self, val):
-        if val <= self.points[0].x:
-            return self.points[0].y
-        if val >= self.points[-1].x:
-            return self.points[-1].y
+        if val <= self._bisect_points[0]:
+            return self.points[self._bisect_points[0]]
+        if val >= self._bisect_points[-1]:
+            return self.points[self._bisect_points[-1]]
 
-        for prev_p, next_p in zip(self.points, self.points[1:]):
-            if val < next_p.x:
-                dist = next_p.x - prev_p.x
-                f = (val - prev_p.x) / dist
-                return next_p.y * f + prev_p.y * (1-f)
+        next_i = bisect_right(self._break_vals, val)
+        next_p = self._break_vals[next_i]
+        prev_i = next_i - 1
+        prev_p = self._break_vals[prev_p]
+
+        # sadly pygame.math.lerp doesn't work for anything past numbers,
+        # and i want this to support pygame.Colors and pygame.Vectors
+        dist = next_p.x - prev_p.x
+        f = (val - prev_p.x) / dist
+        return next_p.y * f + prev_p.y * (1-f)
 
 
 class Timer:
