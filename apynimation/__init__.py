@@ -110,6 +110,7 @@ class Window(Container):
 
     def create(size, caption="Untitled window", **kwargs):
         # surely nothing will break if you try to call create() multiple times
+        # TODO: remove size=... and replace with Window.res or Window.size
         pg.init()
         pg.display.set_caption(caption)
         Window.surface = pg.display.set_mode(size, **kwargs)
