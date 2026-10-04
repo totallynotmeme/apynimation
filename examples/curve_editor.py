@@ -49,21 +49,37 @@ class Viewport:
         return True
 
 
+curve_points = {
+    0: 0,
+    0.5: 0.72,
+    1: 1,
+}
+
 class CurvePoint(Point):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    dragging = None
+
+    def __init__(self, where, val):
+        super().__init__()
+        self.where = where
+        self.val = val
         self.pulse_t = 999
         self.dragging = False
+        self.x = self.where * Viewport.w
+        self.y = (1-self.val) * Viewport.h
 
     def step(self, t=0):
         self.pulse_t += 50 * dt
-        if self.dragging:
+        if CurvePoint.dragging == self:
+            # drag the point
             self.update(Input.mouse_pos)
             Viewport.keep_in_view(self)
+            self.where = self.x / Viewport.w
+            self.val = 1 - self.y / Viewport.h
 
     def draw(self, target):
         pg.draw.circle(target, "white", self, 20, 1)
         pg.draw.circle(target, "white", self, 5)
+        # pulse on release
         if self.pulse_t < 50/3:
             radius = 15 * self.pulse_t ** 0.5
             width = int(50/3 - self.pulse_t + 1)
@@ -72,20 +88,33 @@ class CurvePoint(Point):
     def collidepoint(self, point):
         return self.distance_to(point) < 20
 
+    def bake_point(self):
+        curve_points[self.where] = self.val
+
 
 main = Scene()
 
 preview_point = Point()
 preview_circle = main.add(Circle(preview_point, color="red", radius=7, width=0))
 
-points = list(main.add(
-    CurvePoint(0, Viewport.h),
-    CurvePoint(Viewport.w*0.5, Viewport.h*0.72),
-    CurvePoint(Viewport.w, 0),
-))
-curve = logic.Curve(points)
+visual_points = []
+for key, val in curve_points.items():
+    a = CurvePoint(key, val)
+    main.add(a)
+    visual_points.append(a)
 
-wireframe = Wireframe(points)
+curve = logic.Curve(curve_points)
+
+
+def refresh_points():
+    curve_points.clear()
+    for i in visual_points:
+        i.bake_point()
+    curve.update_points()
+    wireframe.points.sort(key=lambda point: point.x)
+
+
+wireframe = Wireframe(visual_points)
 main.add(wireframe)
 
 edge_l = Line(Point(), Point())
@@ -136,39 +165,36 @@ def click_handler(ev):
                 Viewport.editing_text = ""
                 i.color = "yellow"
         # messing with the graph
-        for i in points:
+        for i in visual_points:
             if i.collidepoint(Input.mouse_pos):
-                i.dragging = True
+                CurvePoint.dragging = i
                 break
         else: # no points were hit
             if Viewport.collidepoint(Input.mouse_pos):
                 # create a new point
-                new = CurvePoint()
+                new = CurvePoint(0, 0)
                 main.add(new)
-                points.append(new)
-                new.dragging = True
+                visual_points.append(new)
+                CurvePoint.dragging = new
                 new.step()
-                curve.update_points()
     if ev.button == pg.BUTTON_RIGHT:
         # remove a point
-        if len(points) <= 2: # safeguard
+        if len(visual_points) <= 2: # safeguard
             return
-        for i in points:
+        for i in visual_points:
             if i.collidepoint(Input.mouse_pos):
-                points.remove(i)
+                visual_points.remove(i)
                 main.remove(i)
-                curve.update_points()
+                refresh_points()
                 break
 
 
 def unclick_handler(ev):
     if ev.button == pg.BUTTON_LEFT:
-        for i in curve.points:
-            if i.dragging:
-                i.pulse_t = 0
-                i.dragging = False
-                curve.update_points()
-                break
+        if CurvePoint.dragging is not None:
+            CurvePoint.dragging.pulse_t = 0
+            CurvePoint.dragging = None
+            refresh_points()
 
 
 def keyboard_handler(ev):
@@ -215,6 +241,7 @@ Window.scene = main
 color = pg.Color(0)
 
 while Window.is_open:
+    # labels
     label_x_from.text = f"X_min = {Viewport.x_from:.2f}"
     label_x_to.text = f"X_max = {Viewport.x_to:.2f}"
     label_y_from.text = f"Y_min = {Viewport.y_from:.2f}"
@@ -223,35 +250,45 @@ while Window.is_open:
         prefix = Viewport.editing_what.text.split("=")[0] + "= "
         Viewport.editing_what.text = prefix + Viewport.editing_text
 
+    # export button
     if export_button.collidepoint(Input.mouse_pos):
         export_button.color = (60, 60, 20)
         if Input.mouse_just_pressed[0]: # left
             print("my_curve = Curve([")
-            x_ratio = (Viewport.x_to - Viewport.x_from) / Viewport.w
-            y_ratio = (Viewport.y_to - Viewport.y_from) / Viewport.h
+            x_ratio = (Viewport.x_to - Viewport.x_from)
+            y_ratio = (Viewport.y_to - Viewport.y_from)
             x_offset = Viewport.x_from
             y_offset = Viewport.y_from
-            for i in points:
-                x = i.x * x_ratio + x_offset
-                y = (Viewport.h - i.y) * y_ratio + y_offset
+            for key, val in curve_points.items():
+                x = key * x_ratio + x_offset
+                y = val * y_ratio + y_offset
                 print(f"    Point({x}, {y}),")
             print("])")
             export_label.text = "Exported to console!"
     else:
         export_button.color = (40, 40, 40)
 
+    # updating the curve if dragging
+    if CurvePoint.dragging is not None:
+        refresh_points()
+
+    # preview point
     time_unit = Viewport.x_to - Viewport.x_from
+    x = Window.t / time_unit % 1
+    y = 1 - curve.get(x)
+    preview_point.update(x * Viewport.w, y * Viewport.h)
+
+    # graph edge lines
+    edge_l.p1.update(0, visual_points[0].y)
+    edge_l.p2.update(visual_points[0])
+    edge_r.p2.update(Viewport.w, visual_points[-1].y)
+    edge_r.p1.update(visual_points[-1])
+
+    # time unit line
     left_edge.x = win_size[0] - time_unit * 2 * fps
 
-    x = (Window.t / time_unit % 1) * Viewport.w
-    y = curve.get(x)
-    preview_point.update(x, y)
-    edge_l.p1.update(0, points[0].y)
-    edge_l.p2.update(points[0])
-    edge_r.p2.update(Viewport.w, points[-1].y)
-    edge_r.p1.update(points[-1])
-
-    factor = min(max(100 - y*100 / Viewport.h, 0), 100)
+    # curve value history
+    factor = min(max(100 - y*100, 0), 100)
     color.hsva = (200, 100, factor, 100)
     # evil hack to shift the trail surface left
     pg.draw.rect(trail.surface, color, (win_size[0]-2, 0, 5, 20))

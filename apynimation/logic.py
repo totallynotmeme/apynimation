@@ -159,16 +159,18 @@ class Curve:
         if val >= self._bisect_points[-1]:
             return self.points[self._bisect_points[-1]]
 
-        next_i = bisect_right(self._break_vals, val)
-        next_p = self._break_vals[next_i]
+        next_i = bisect_right(self._bisect_points, val)
+        next_p = self._bisect_points[next_i]
+        next_val = self.points[next_p]
         prev_i = next_i - 1
-        prev_p = self._break_vals[prev_p]
+        prev_p = self._bisect_points[prev_i]
+        prev_val = self.points[prev_p]
 
         # sadly pygame.math.lerp doesn't work for anything past numbers,
         # and i want this to support pygame.Colors and pygame.Vectors
-        dist = next_p.x - prev_p.x
-        f = (val - prev_p.x) / dist
-        return next_p.y * f + prev_p.y * (1-f)
+        dist = next_p - prev_p
+        f = (val - prev_p) / dist
+        return next_val * f + prev_val * (1-f)
 
 
 class Timer:
