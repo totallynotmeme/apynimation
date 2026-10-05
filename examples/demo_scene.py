@@ -3,14 +3,16 @@ from apynimation import logic
 from math import sin
 
 
-win_size = (1600, 900)
-fps = 60
+Window.set_res((1600, 900))
+dt = Window.set_fps(60)
+Window.create(caption="Test scene")
+
 
 # used for the blur effect. might make this into a Layer subclass later(?)
-filler = pg.Surface(win_size, pg.SRCALPHA)
+filler = pg.Surface(Window.res, pg.SRCALPHA)
 filler.fill((0, 0, 0, 10))
 
-main = Scene(win_size)
+main = Scene()
 
 
 ground = main.create_layer()
@@ -19,7 +21,6 @@ ground.blit = lambda target: target.blit(ground.surf, (0, 0), None, pg.BLEND_ADD
 
 ground_data = {
     "focal_length": 250,
-    "win_size": pg.Vector2(win_size),
     "camera_pos": pg.Vector3(0, -50, 23),
 }
 
@@ -43,7 +44,6 @@ for x in range(20):
 
 cube_data = {
     "focal_length": 250,
-    "win_size": pg.Vector2(win_size),
     "camera_pos": pg.Vector3(0, 0, -100),
 }
 
@@ -101,8 +101,6 @@ def mouse_click_handler(ev):
         click_radius = 0
 
 
-Window.create(win_size, caption="Test scene")
-dt = Window.set_fps(fps)
 Window.scene = main
 Window.add_event_handler({
     pg.MOUSEBUTTONDOWN: mouse_click_handler,

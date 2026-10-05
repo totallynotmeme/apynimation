@@ -1,13 +1,15 @@
 from apynimation import *
 from apynimation import logic
 
-win_size = (1600, 900)
-fps = 60
+
+Window.set_res((1600, 900))
+dt = Window.set_fps(60)
+Window.create(caption="Curve editor")
 
 
 class Viewport:
-    w = win_size[1] - 50
-    h = win_size[1] - 50
+    w = Window.res[1] - 50
+    h = Window.res[1] - 50
     x_from = 0
     x_to = 1
     y_from = 0
@@ -121,12 +123,12 @@ edge_l = Line(Point(), Point())
 edge_r = Line(Point(), Point())
 main.add(edge_l, edge_r)
 
-trail = Sprite((0, win_size[1] - 20))
-trail.surface = pg.Surface((win_size[0], 20))
+trail = Sprite((0, Window.res[1] - 20))
+trail.surface = pg.Surface((Window.res[0], 20))
 main.add(trail)
 
-left_edge = Point(0, win_size[1]-25) # x gets set later in the code
-right_edge = Point(win_size[0], win_size[1]-25)
+left_edge = Point(0, Window.res[1]-25) # x gets set later in the code
+right_edge = Point(Window.res[0], Window.res[1]-25)
 unit_length = Line(left_edge, right_edge, width=3)
 main.add(unit_length)
 
@@ -232,8 +234,6 @@ Window.add_event_handler({
 })
 
 
-Window.create(win_size, caption="Curve editor")
-dt = Window.set_fps(fps)
 Window.scene = main
 
 
@@ -285,13 +285,13 @@ while Window.is_open:
     edge_r.p1.update(visual_points[-1])
 
     # time unit line
-    left_edge.x = win_size[0] - time_unit * 2 * fps
+    left_edge.x = Window.res[0] - time_unit * 2 * Window.fps
 
     # curve value history
     factor = min(max(100 - y*100, 0), 100)
     color.hsva = (200, 100, factor, 100)
     # evil hack to shift the trail surface left
-    pg.draw.rect(trail.surface, color, (win_size[0]-2, 0, 5, 20))
+    pg.draw.rect(trail.surface, color, (Window.res[0]-2, 0, 5, 20))
     trail.surface.blit(trail.surface, (-2, 0))
 
     Window.finish_frame()

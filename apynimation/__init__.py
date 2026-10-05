@@ -104,18 +104,20 @@ class Window(Container):
     scene = None
     event_map = {}
 
+    res = (640, 480) # default
     fps = 60 # default
     dt = 1/60
     t = 0
 
-    def create(size, caption="Untitled window", **kwargs):
+    def create(caption="Untitled window", **kwargs):
         # surely nothing will break if you try to call create() multiple times
-        # TODO: remove size=... and replace with Window.res or Window.size
         pg.init()
         pg.display.set_caption(caption)
-        Window.surface = pg.display.set_mode(size, **kwargs)
+        Window.surface = pg.display.set_mode(Window.res, **kwargs)
         Window.clock = pg.time.Clock()
         Window.is_open = True
+        # reset the window size in case system changes it (like on pydroid)
+        Window.res = Window.surface.get_size()
 
     def close(ev=None): # ev argument used for event handling
         Window.is_open = False
@@ -126,6 +128,11 @@ class Window(Container):
         Window.fps = fps
         Window.dt = 1/fps
         return Window.dt
+
+    def set_res(res):
+        # exists to keep consistency with Window.set_fps()
+        Window.res = res
+        return res
 
     def finish_frame():
         # rendering
@@ -184,9 +191,8 @@ Window.event_map[pg.QUIT] = Window.close # default
 
 # actually usable containers
 class Scene(Container):
-    def __init__(self, size=None):
+    def __init__(self):
         self.t = 0
-        self.size = size
         self.layers = []
         self.objects = []
         self.event_map = {}
@@ -203,10 +209,7 @@ class Scene(Container):
             obj.draw(target)
 
     def create_layer(self, *args, **kwargs):
-        if self.size is None:
-            raise ValueError(f"{self} has no size. Use Scene(win_size) to enable layers")
-
-        a = Layer(self.size, *args, **kwargs)
+        a = Layer(*args, **kwargs)
         self.layers.append(a)
         return a
 
@@ -219,10 +222,10 @@ class Scene(Container):
 class Layer(Container):
     DISABLE_BUFFER = False
 
-    def __init__(self, size, _surface_flags=pg.SRCALPHA):
+    def __init__(self, _surface_flags=pg.SRCALPHA):
         self.active = True
         self.objects = []
-        self.surf = pg.Surface(size, _surface_flags)
+        self.surf = pg.Surface(Window.res, _surface_flags)
 
     def draw(self, target, t=0):
         if not self.active:
@@ -299,8 +302,8 @@ class Point3d(Point):
 
         self.x = (pos3d.x * focal_len) / (pos3d.z + focal_len)
         self.y = (pos3d.y * focal_len) / (pos3d.z + focal_len)
-        self.x += self.data["win_size"].x / 2
-        self.y += self.data["win_size"].y / 2
+        self.x += Window.res[0] / 2
+        self.y += Window.res[1] / 2
         self.valid = True
 
 

@@ -2,8 +2,10 @@ from apynimation import *
 from apynimation import logic
 from apynimation import ui
 
-win_size = (1600, 900)
-fps = 60
+
+Window.set_res((1600, 900))
+dt = Window.set_fps(60)
+Window.create(caption="Basic UI demo")
 
 
 # creating a custom class to reduce repetition
@@ -81,7 +83,7 @@ Window.add(Scene_button("Cursor", cursor_demo))
 cursor_demo.add(Text(font, text="Try left clicking somewhere", pos=(230, 20)))
 
 # trail
-cursor_trail_points = logic.Trail(fps // 6)
+cursor_trail_points = logic.Trail(Window.fps // 6)
 cursor_trail = Wireframe(cursor_trail_points.items, width=5)
 
 def _step(t=0):
@@ -114,7 +116,6 @@ Window.add(Scene_button("3D donut", donut_demo))
 
 camera_data = {
     "focal_length": 350,
-    "win_size": pg.Vector2(win_size),
     "camera_pos": pg.Vector3(0, 0, -100),
 }
 donut_points = []
@@ -132,7 +133,7 @@ donut_demo.add(Wireframe(donut_points, closed=True))
 
 
 ## layers demo
-layers_demo = Scene(win_size) # using win_size here to enable layers
+layers_demo = Scene()
 Window.add(Scene_button("Layer effects", layers_demo))
 font = pg.font.SysFont("consolas", 40)
 
@@ -155,7 +156,7 @@ layers_demo_l2.add(layers_text_l2)
 # NOTE: because we're filling the layer with opaque color, any layers behind it
 # won't be visible. Uncomment _l0 lines above to see this issue in action.
 # For real post-processing, you might want to overwrite .blit() function instead
-filler = pg.Surface(win_size, pg.SRCALPHA)
+filler = pg.Surface(Window.res, pg.SRCALPHA)
 filler.fill((0, 0, 0, 10))
 def _clear():
     layers_demo_l1.surf.blit(filler, (0, 0))
@@ -167,7 +168,7 @@ layers_demo_l1.clear = _clear
 other_demo = Scene()
 Window.add(Scene_button("Other", other_demo))
 
-center_point = Point(win_size)
+center_point = Point(Window.res)
 center_point /= 2
 ngons = [
     CircleNgon(center_point, width=1, radius=50, sides=5),
@@ -198,9 +199,7 @@ Window.add_event_handler({
     pg.KEYDOWN: keyboard_handler,
 })
 
-Window.create(win_size, caption="Basic UI demo")
 Window.scene = about_demo
-dt = Window.set_fps(fps)
 
 while Window.is_open:
     # click bubble animation

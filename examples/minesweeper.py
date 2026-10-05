@@ -17,8 +17,10 @@ C - mark cell as mine
 """)
 
 
-win_size = (1600, 900)
-fps = 60
+Window.set_res((1600, 900))
+dt = Window.set_fps(60)
+Window.create("Minesweeper at home")
+
 
 # paramaters
 grid_size = (20, 12)
@@ -43,8 +45,8 @@ colortable = {
     7: (255, 255, 255),
 }
 
-x_start = win_size[0]/2 - (cell_size + cell_padding) * grid_size[0] / 2
-y_start = win_size[1]/2 - (cell_size + cell_padding) * grid_size[1] / 2
+x_start = Window.res[0]/2 - (cell_size + cell_padding) * grid_size[0] / 2
+y_start = Window.res[1]/2 - (cell_size + cell_padding) * grid_size[1] / 2
 free_cells = grid_size[0] * grid_size[1] - mine_count
 
 
@@ -165,7 +167,7 @@ class Cell(ui.Button):
                 i.open_t = 5
 
 
-scene = Scene(win_size)
+scene = Scene()
 Window.scene = scene
 Layer.DISABLE_BUFFER = True
 
@@ -246,12 +248,10 @@ scene.add(mines_label)
 
 
 win_layer = scene.create_layer()
-win_layer.add(Rect(Point(0, 0), Point(win_size), color=(50, 200, 50), width=10))
+win_layer.add(Rect(Point(0, 0), Point(Window.res), color=(50, 200, 50), width=10))
 win_layer.active = False
 
 generate()
-Window.create(win_size, "Minesweeper at home")
-dt = Window.set_fps(fps)
 
 while Window.is_open:
     if Cell.opened == free_cells:

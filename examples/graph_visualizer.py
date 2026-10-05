@@ -2,12 +2,6 @@ from apynimation import *
 import random
 
 
-win_size = (1600, 900)
-fps = 60
-
-half_win_size = pg.Vector2(win_size) / 2
-
-
 # some info about controls
 print("""
 A funny graph visualizer thing
@@ -24,15 +18,22 @@ R - reset graph back to initial state
 """)
 
 
+Window.set_res((1600, 900))
+dt = Window.set_fps(60)
+Window.create(caption="Graph")
+
+half_window_res = pg.Vector2(Window.res) / 2
+
+
 class Camera:
     pos = pg.Vector2()
     zoom = 1
 
     def project(point):
-        return (point + Camera.pos) * Camera.zoom + half_win_size
+        return (point + Camera.pos) * Camera.zoom + half_window_res
 
     def unproject(point):
-        return (point - half_win_size) / Camera.zoom - Camera.pos
+        return (point - half_window_res) / Camera.zoom - Camera.pos
 
 
 font = pg.font.SysFont("consolas", 20)
@@ -133,8 +134,6 @@ Window.add_event_handler({
     pg.KEYDOWN: key_handler,
 })
 
-Window.create(win_size, caption="Graph")
-dt = Window.set_fps(fps)
 
 dragging = None
 
