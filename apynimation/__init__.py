@@ -271,42 +271,6 @@ class Point(pg.Vector2):
         target.set_at(pixel_pos, "white")
 
 
-class Point3d(Point):
-    # NOTE: this DOES NOT handle cases when the point is behind the camera
-    # If the point is behind, it will end up being flipped back to the front
-
-    def __init__(self, x=0, y=0, z=0, data=None):
-        self.pos3d = pg.Vector3(x, y, z)
-        self.data = data or {}
-        self.prev_t = -1
-        self.valid = False
-
-        self.step() # to set self.x and self.y
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__} @ {self.pos3d}>"
-
-    def step(self, t=0):
-        # micro-optimization to prevent it from recomputing the same point 100 times
-        if self.prev_t == t:
-            return
-        self.prev_t = t
-
-        focal_len = self.data["focal_length"]
-        pos3d = self.pos3d - self.data["camera_pos"]
-        # TODO: make it work properly for z<0, or fallback to an unset value?
-        # or even move this out to apynimation_3d submodule/addon/thing???
-        if pos3d.z + focal_len <= 0:
-            self.valid = False
-            return
-
-        self.x = (pos3d.x * focal_len) / (pos3d.z + focal_len)
-        self.y = (pos3d.y * focal_len) / (pos3d.z + focal_len)
-        self.x += Window.res[0] / 2
-        self.y += Window.res[1] / 2
-        self.valid = True
-
-
 # objects that are more useful than points
 class Line(Drawable):
     def __init__(self, p1, p2, color="white", width=1):

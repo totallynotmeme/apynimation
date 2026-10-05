@@ -1,5 +1,6 @@
 from apynimation import *
 from apynimation import logic
+from apynimation import three_d
 from math import sin
 
 
@@ -15,14 +16,14 @@ filler.fill((0, 0, 0, 10))
 main = Scene()
 
 
+Point3d = three_d.Point3d
+
 ground = main.create_layer()
 ground.clear = lambda: ground.surf.blit(filler, (0, 0))
 ground.blit = lambda target: target.blit(ground.surf, (0, 0), None, pg.BLEND_ADD)
 
-ground_data = {
-    "focal_length": 250,
-    "camera_pos": pg.Vector3(0, -50, 23),
-}
+ground_camera_pos = Point3d(0, -50, 23)
+ground_camera = three_d.Camera(ground_camera_pos)
 
 ground_points = []
 for x in range(-10, 10):
@@ -30,7 +31,7 @@ for x in range(-10, 10):
     y = 25 - x**2 / 1500
     for z in range(-10, 10):
         z *= 20
-        ground_points.append(Point3d(x, y, z, data=ground_data))
+        ground_points.append(Point3d(x, y, z, camera=ground_camera))
 
 color = (0, 127, 255)
 
@@ -42,14 +43,11 @@ for x in range(20):
     ground.add(Wireframe([ground_points[i] for i in inds], color))
 
 
-cube_data = {
-    "focal_length": 250,
-    "camera_pos": pg.Vector3(0, 0, -100),
-}
+cube_camera = three_d.Camera(pos=Point3d(0, 0, -100))
 
 # cube
 cube_points = [
-    Point3d(x*100, y*100, z*100, data=cube_data)
+    Point3d(x*100, y*100, z*100, camera=cube_camera)
     for x in (-1, 1)
     for y in (-1, 1)
     for z in (-1, 1)
@@ -111,17 +109,17 @@ while Window.is_open:
     # cube
     for i in cube_points:
         i.pos3d.rotate_y_ip(60 * dt)
-    
-    cube_data["camera_pos"].y -= sin(main.t) * 69 * dt
-    
+
+    cube_camera.pos.y -= sin(main.t) * 69 * dt
+
     # ground 1/2
     for i in ground_points:
         i.pos3d.y += sin(i.pos3d.x + i.pos3d.z + main.t * 3) * 10 * dt
-    
+
     # ground 2/2 - moving the camera forward and snapping it back when needed
-    ground_data["camera_pos"].z += 30 * dt
-    if ground_data["camera_pos"].z >= 42:
-        ground_data["camera_pos"].z -= 20
+    ground_camera.pos.z += 30 * dt
+    if ground_camera.pos.z >= 42:
+        ground_camera.pos.z -= 20
         # shifting the point height values back across layers
         # to create the illusion of infinite motion
         for z_from in range(1, 20):
@@ -134,7 +132,7 @@ while Window.is_open:
         for x in range(20):
             i = ground_points[x*20 + 19]
             i.pos3d.y = 25 - i.pos3d.x ** 2 / 1500
-    
+
     # sun
     if sun_ticker.step():
         sun_ngon.angle += 17
@@ -144,7 +142,7 @@ while Window.is_open:
             pos2 = sun_point + pg.Vector2(0, -50).rotate(line_angle)
             i.p1.update(pos1)
             i.p2.update(pos2)
-    
+
     # click circle
     click_radius += 50 * dt
     if click_radius < 50/3:
@@ -152,5 +150,5 @@ while Window.is_open:
         click_circle.width = int(50/3 - click_radius + 1)
     else:
         click_circle.radius = 0
-    
+
     Window.finish_frame()

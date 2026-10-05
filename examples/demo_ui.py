@@ -1,6 +1,5 @@
 from apynimation import *
-from apynimation import logic
-from apynimation import ui
+from apynimation import logic, ui, three_d
 
 
 Window.set_res((1600, 900))
@@ -114,10 +113,10 @@ cursor_demo.add_event_handler({
 donut_demo = Scene()
 Window.add(Scene_button("3D donut", donut_demo))
 
-camera_data = {
-    "focal_length": 350,
-    "camera_pos": pg.Vector3(0, 0, -100),
-}
+# so we don't have to type three_d.Point3d every time
+Point3d = three_d.Point3d
+
+camera = three_d.Camera(pos=(0, 0, -100), focal_length=350)
 donut_points = []
 
 # forming a donut with a bunch of circles
@@ -127,7 +126,7 @@ for angle_x in range(0, 360, 360 // 15):
     up = pg.Vector3(0, 250 + r_add, z_offset)
     for angle_z in range(0, 360, 360 // 15):
         pos = up.rotate_z(angle_z)
-        a = donut_demo.add(Point3d(pos, data=camera_data))
+        a = donut_demo.add(Point3d(pos, camera=camera))
         donut_points.append(a)
 donut_demo.add(Wireframe(donut_points, closed=True))
 
