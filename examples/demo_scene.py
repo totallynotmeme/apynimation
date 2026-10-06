@@ -22,7 +22,7 @@ ground = main.create_layer()
 ground.clear = lambda: ground.surf.blit(filler, (0, 0))
 ground.blit = lambda target: target.blit(ground.surf, (0, 0), None, pg.BLEND_ADD)
 
-ground_camera_pos = Point3d(0, -50, 23)
+ground_camera_pos = Point3d(0, -50, -230)
 ground_camera = three_d.Camera(ground_camera_pos)
 
 ground_points = []
@@ -43,11 +43,11 @@ for x in range(20):
     ground.add(Wireframe([ground_points[i] for i in inds], color))
 
 
-cube_camera = three_d.Camera(pos=Point3d(0, 0, -100))
+cube_camera = three_d.Camera(pos=Point3d(0, 0, -200))
 
 # cube
 cube_points = [
-    Point3d(x*100, y*100, z*100, camera=cube_camera)
+    Point3d(x*50, y*50, z*50, camera=cube_camera)
     for x in (-1, 1)
     for y in (-1, 1)
     for z in (-1, 1)
@@ -110,7 +110,7 @@ while Window.is_open:
     for i in cube_points:
         i.pos3d.rotate_y_ip(60 * dt)
 
-    cube_camera.pos.y -= sin(main.t) * 69 * dt
+    cube_camera.pos.y -= sin(main.t) * 42 * dt
 
     # ground 1/2
     for i in ground_points:
@@ -118,7 +118,7 @@ while Window.is_open:
 
     # ground 2/2 - moving the camera forward and snapping it back when needed
     ground_camera.pos.z += 30 * dt
-    if ground_camera.pos.z >= 42:
+    if ground_camera.pos.z >= -210:
         ground_camera.pos.z -= 20
         # shifting the point height values back across layers
         # to create the illusion of infinite motion

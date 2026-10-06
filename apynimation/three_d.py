@@ -24,26 +24,35 @@ class Point3d(Point):
             return
         self.prev_t = t
 
-        focal_len = self.camera.focal_length
+        # shift point to camera-space
         pos3d = self.pos3d - self.camera.pos
-        if pos3d.z + focal_len <= 0:
+        # rotate point if needed
+        if self.camera.rot.z != 0:
+            pos3d.rotate_z_ip(self.camera.rot.z)
+        if self.camera.rot.x != 0:
+            pos3d.rotate_y_ip(self.camera.rot.x)
+        if self.camera.rot.y != 0:
+            pos3d.rotate_x_ip(self.camera.rot.y)
+
+        # check if we can project the point
+        if pos3d.z <= 0:
             self.valid = False
             return
 
-        # if the point is valid, pre-compute its screen position
-        self.x = (pos3d.x * focal_len) / (pos3d.z + focal_len)
-        self.y = (pos3d.y * focal_len) / (pos3d.z + focal_len)
+        # if the point is valid, pre-compute its projected position
+        self.x = pos3d.x
+        self.y = pos3d.y
+        self *= self.camera.focal_length / pos3d.z
+        # moving (0, 0) to the center of the screen
         self.x += Window.res[0] / 2
         self.y += Window.res[1] / 2
         self.valid = True
-
-    def draw(self, target):
-        pass
 
 
 class Camera:
     def __init__(self, pos=None, focal_length=250):
         self.pos = pos or Vector3()
+        self.rot = Vector3()
         self.focal_length = focal_length
 
     def __repr__(self):
