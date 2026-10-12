@@ -111,6 +111,7 @@ class Window(Container):
     event_map = {}
 
     res = (640, 480) # default
+    center = pg.Vector2(res) / 2
     fps = 60 # default
     dt = 1/60
     t = 0
@@ -136,8 +137,8 @@ class Window(Container):
         return Window.dt
 
     def set_res(res):
-        # exists to keep consistency with Window.set_fps()
         Window.res = res
+        Window.center = pg.Vector2(res) / 2
         return res
 
     def finish_frame():
@@ -273,6 +274,18 @@ class Point(pg.Vector2): # technically also Drawable
     def draw(self, target):
         pixel_pos = (int(self.x), int(self.y))
         target.set_at(pixel_pos, "white")
+
+
+class OffsetPoint(Point):
+    def __init__(self, anchor, offset=None):
+        super().__init__()
+        self.anchor = anchor
+        self.offset = offset
+        self.step()
+
+    def step(self, t=0):
+        self.update(self.anchor)
+        self += self.offset
 
 
 # objects that are more useful than points
