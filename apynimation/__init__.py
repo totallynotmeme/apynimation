@@ -146,8 +146,7 @@ class Window(Container):
         # rendering
         Window.clear()
         if Window.scene is not None:
-            Window.scene.step(Window.t)
-            Window.scene.draw(Window.surface)
+            Window.scene.step_and_draw(Window.surface)
 
         for obj in Window.objects:
             if obj.active:
@@ -209,7 +208,7 @@ class Scene(Container):
     def __repr__(self):
         return f"<{self.__class__.__name__} {len(self.layers)} layers>"
 
-    def draw(self, target):
+    def step_and_draw(self, target):
         for layer in self.layers:
             if layer.active:
                 layer.step(self.t)
@@ -237,19 +236,17 @@ class Layer(Container):
         self.objects = []
         self.surf = pg.Surface(Window.res, _surface_flags)
 
-    def draw(self, target, t=0):
+    def draw(self, target):
         if self.DISABLE_BUFFER:
             # removes the overhead of blitting a buffer surface,
             # but doesn't allow pre- and post-effects
             if self.objects:
-                super().step(t)
                 super().draw(target)
             return
 
         self.clear()
 
         if self.objects:
-            super().step(t)
             super().draw(self.surf)
 
         self.blit(target)
