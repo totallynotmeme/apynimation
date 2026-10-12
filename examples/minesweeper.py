@@ -18,7 +18,7 @@ C - mark cell as mine
 
 
 Window.set_res((1600, 900))
-dt = Window.set_fps(60)
+Window.set_fps(60)
 Window.create("Minesweeper at home")
 
 
@@ -120,7 +120,7 @@ class Cell(ui.Button):
                         continue
                     if what == rigged or what in rigged.neighbours:
                         continue
-                    what.mine = rigged.mine
+                    what.mine = 1
                     rigged.mine = None
                     break
             # continue as normal lol
@@ -169,7 +169,6 @@ class Cell(ui.Button):
 
 scene = Scene()
 Window.scene = scene
-Layer.DISABLE_BUFFER = True
 
 mines = {}
 for x in range(grid_size[0]):
@@ -202,7 +201,7 @@ def generate():
     running = False
     Cell.opened = 0
     Cell.flagged = 0
-    win_layer.active = False
+    win_rect.active = False
 
     # reset all mines first
     for i in mines.values():
@@ -247,16 +246,16 @@ mines_label = Text(font, pos=(10, 10))
 scene.add(mines_label)
 
 
-win_layer = scene.create_layer()
-win_layer.add(Rect(Point(0, 0), Point(Window.res), color=(50, 200, 50), width=10))
-win_layer.active = False
+win_rect = Rect(Point(0, 0), Point(Window.res), color=(50, 200, 50), width=10)
+win_rect.active = False
+scene.add(win_rect)
 
 generate()
 
 while Window.is_open:
     if Cell.opened == free_cells:
         # show the winning highlight
-        win_layer.active = (Window.t % 1 > 0.5)
+        win_rect.active = (Window.t % 1 > 0.5)
     mines_label.text = f"{Cell.flagged}/{mine_count}"
     Window.finish_frame()
 

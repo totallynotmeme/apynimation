@@ -123,8 +123,9 @@ class Window(Container):
         Window.surface = pg.display.set_mode(Window.res, **kwargs)
         Window.clock = pg.time.Clock()
         Window.is_open = True
-        # reset the window size in case system changes it (like on pydroid)
-        Window.res = Window.surface.get_size()
+        Input.step()
+        # double-check the window size in case system changes it (ex: pydroid)
+        Window.set_res(Window.surface.get_size())
 
     def close(ev=None): # ev argument used for event handling
         Window.is_open = False
@@ -139,7 +140,7 @@ class Window(Container):
     def set_res(res):
         Window.res = res
         Window.center = pg.Vector2(res) / 2
-        return res
+        return Window.center
 
     def finish_frame():
         # rendering
@@ -210,11 +211,13 @@ class Scene(Container):
 
     def draw(self, target):
         for layer in self.layers:
-            layer.draw(target, t=self.t)
+            if layer.active:
+                layer.step(self.t)
+                layer.draw(target)
 
-        for obj in self.objects:
-            obj.step(self.t)
-            obj.draw(target)
+        if self.objects:
+            super().step(self.t)
+            super().draw(target)
 
     def create_layer(self, *args, **kwargs):
         a = Layer(*args, **kwargs)
@@ -238,16 +241,16 @@ class Layer(Container):
         if self.DISABLE_BUFFER:
             # removes the overhead of blitting a buffer surface,
             # but doesn't allow pre- and post-effects
-            for obj in self.objects:
-                obj.step(t)
-                obj.draw(target)
+            if self.objects:
+                super().step(t)
+                super().draw(target)
             return
 
         self.clear()
 
-        for obj in self.objects:
-            obj.step(t)
-            obj.draw(self.surf)
+        if self.objects:
+            super().step(t)
+            super().draw(self.surf)
 
         self.blit(target)
 
@@ -293,8 +296,8 @@ class Line(Drawable):
     def __init__(self, p1, p2, color="white", width=1):
         self.p1 = p1
         self.p2 = p2
-        self.width = width
         self.color = pg.Color(color)
+        self.width = width
 
     def __repr__(self):
         return f"<{self.__class__.__name__}  {self.p1} -- {self.p2}>"
@@ -389,9 +392,9 @@ class Circle(Drawable):
         self.center_point = center_point
         self.radius_point = radius_point
         self.center = pg.Vector2()
-        self.radius = radius # gets automatically set if radius_point is a Point()
-        self.width = width
         self.color = pg.Color(color)
+        self.width = width
+        self.radius = radius # gets automatically set if radius_point is a Point()
         self.step()
 
     def __repr__(self):

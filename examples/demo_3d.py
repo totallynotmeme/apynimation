@@ -15,8 +15,6 @@ Window.set_res((1600, 900))
 Window.set_fps(60)
 Window.create("Demo scene")
 
-half_win_res = pg.Vector2(Window.res) / 2
-
 
 world = Scene()
 Window.scene = world
@@ -49,8 +47,8 @@ world.add(Line3d(b, c))
 # rotation markers
 rot_marker = Point()
 
-range_marker_x = Rect((half_win_res.x-180, 0), w=360, h=20, color=(63, 63, 63))
-range_marker_y = Rect((0, half_win_res.y-90), w=20, h=180, color=(63, 63, 63))
+range_marker_x = Rect((Window.center.x-180, 0), w=360, h=20, color=(63, 63, 63))
+range_marker_y = Rect((0, Window.center.y-90), w=20, h=180, color=(63, 63, 63))
 marker_x = Line(Point(0, 0), Point(0, 50), width=5)
 marker_y = Line(Point(0, 0), Point(50, 0), width=5)
 world.add(range_marker_x, range_marker_y, marker_x, marker_y)
@@ -58,6 +56,7 @@ world.add(range_marker_x, range_marker_y, marker_x, marker_y)
 
 spin_donut = True
 
+# @Window.event_handler(pg.KEYDOWN) # TODO:???
 def keydown_handler(ev):
     global spin_donut
     if ev.key == pg.K_TAB:
@@ -68,9 +67,6 @@ Window.add_event_handler({
     pg.KEYDOWN: keydown_handler,
 })
 
-
-# TODO: fix
-Window.finish_frame()
 
 while Window.is_open:
     # player controls
@@ -103,7 +99,7 @@ while Window.is_open:
     # updating the ui
     rot_marker.x = (default_camera.rot.x + 180) % 360 - 180
     rot_marker.y = -default_camera.rot.y
-    rot_marker += half_win_res
+    rot_marker += Window.center
 
     marker_x.p1.x = rot_marker.x
     marker_x.p2.x = rot_marker.x

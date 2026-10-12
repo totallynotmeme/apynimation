@@ -19,10 +19,8 @@ R - reset graph back to initial state
 
 
 Window.set_res((1600, 900))
-dt = Window.set_fps(60)
+Window.set_fps(60)
 Window.create(caption="Graph")
-
-half_window_res = pg.Vector2(Window.res) / 2
 
 
 class Camera:
@@ -30,10 +28,10 @@ class Camera:
     zoom = 1
 
     def project(point):
-        return (point + Camera.pos) * Camera.zoom + half_window_res
+        return (point + Camera.pos) * Camera.zoom + Window.center
 
     def unproject(point):
-        return (point - half_window_res) / Camera.zoom - Camera.pos
+        return (point - Window.center) / Camera.zoom - Camera.pos
 
 
 font = pg.font.SysFont("consolas", 20)
@@ -66,7 +64,7 @@ class Node(Point):
                 child.goal.update(self + up)
 
         if not self.locked:
-            self.update(self.lerp(self.goal, dt * 10))
+            self.update(self.lerp(self.goal, Window.dt * 10))
 
     def draw(self, target):
         r = self.size * Camera.zoom

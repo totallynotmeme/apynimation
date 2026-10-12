@@ -13,8 +13,7 @@ def _project(pos3d, target2d, focal_length):
     target2d.y = pos3d.y
     target2d *= focal_length / pos3d.z
     # moving (0, 0) to the center of the screen
-    target2d.x += Window.res[0] / 2
-    target2d.y += Window.res[1] / 2
+    target2d += Window.center
 
 
 class Point3d(Point):
@@ -78,7 +77,7 @@ default_camera = Camera()
 
 
 class Line3d(Line):
-    tmp_point = pg.Vector2() # used to split a line into 2
+    split_point = pg.Vector2() # used to split the projected line
 
     def draw(self, target):
         if not self.p1.valid and not self.p2.valid:
@@ -114,6 +113,6 @@ class Line3d(Line):
 
         split_pos = point._local3d + direction * fac
         split_pos.z += 0.01 # near clipping distance
-        _project(split_pos, Line3d.tmp_point, camera.focal_length)
+        _project(split_pos, Line3d.split_point, camera.focal_length)
 
-        pg.draw.line(target, self.color, point, Line3d.tmp_point, self.width)
+        pg.draw.line(target, self.color, point, Line3d.split_point, self.width)

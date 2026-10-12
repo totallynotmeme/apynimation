@@ -3,7 +3,7 @@ from apynimation import logic
 
 
 Window.set_res((1600, 900))
-dt = Window.set_fps(60)
+Window.set_fps(60)
 Window.create(caption="Curve editor")
 
 
@@ -70,7 +70,7 @@ class CurvePoint(Point):
         self.y = (1-self.val) * Viewport.h
 
     def step(self, t=0):
-        self.pulse_t += 50 * dt
+        self.pulse_t += 50 * Window.dt
         if CurvePoint.dragging == self:
             # drag the point
             self.update(Input.mouse_pos)
@@ -97,7 +97,7 @@ class CurvePoint(Point):
 main = Scene()
 
 preview_point = Point()
-preview_circle = main.add(Circle(preview_point, color="red", radius=7, width=0))
+preview_circle = main.add(Circle(preview_point, color="red", width=0, radius=7))
 
 visual_points = []
 for key, val in curve_points.items():
