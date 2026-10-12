@@ -52,6 +52,8 @@ class Input:
 
 # some base classes
 class Container:
+    active = True # default
+
     # object capable of containing steppable and drawable objects
     def __init__(self):
         self.objects = []
@@ -61,11 +63,13 @@ class Container:
 
     def step(self, t=0):
         for obj in self.objects:
-            obj.step(t)
+            if obj.active:
+                obj.step(t)
 
     def draw(self, target):
         for obj in self.objects:
-            obj.draw(target)
+            if obj.active:
+                obj.draw(target)
 
     def add(self, *objects):
         self.objects.extend(objects)
@@ -80,6 +84,8 @@ class Container:
 
 
 class Drawable:
+    active = True # default
+
     def step(self, t=0):
         return NotImplemented
 
@@ -142,8 +148,9 @@ class Window(Container):
             Window.scene.draw(Window.surface)
 
         for obj in Window.objects:
-            obj.step(Window.t)
-            obj.draw(Window.surface)
+            if obj.active:
+                obj.step(Window.t)
+                obj.draw(Window.surface)
 
         Window.post()
         pg.display.flip()
@@ -223,14 +230,10 @@ class Layer(Container):
     DISABLE_BUFFER = False
 
     def __init__(self, _surface_flags=pg.SRCALPHA):
-        self.active = True
         self.objects = []
         self.surf = pg.Surface(Window.res, _surface_flags)
 
     def draw(self, target, t=0):
-        if not self.active:
-            return
-
         if self.DISABLE_BUFFER:
             # removes the overhead of blitting a buffer surface,
             # but doesn't allow pre- and post-effects
@@ -256,8 +259,9 @@ class Layer(Container):
 
 
 # points
-class Point(pg.Vector2):
+class Point(pg.Vector2): # technically also Drawable
     # Vector2's __init__ works here, no need to re-define it
+    active = True
 
     def __repr__(self):
         return f"<{self.__class__.__name__} @ ({self.x}, {self.y})>"

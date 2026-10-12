@@ -56,6 +56,19 @@ marker_y = Line(Point(0, 0), Point(50, 0), width=5)
 world.add(range_marker_x, range_marker_y, marker_x, marker_y)
 
 
+spin_donut = True
+
+def keydown_handler(ev):
+    global spin_donut
+    if ev.key == pg.K_TAB:
+        spin_donut = not spin_donut
+
+
+Window.add_event_handler({
+    pg.KEYDOWN: keydown_handler,
+})
+
+
 # TODO: fix
 Window.finish_frame()
 
@@ -98,9 +111,10 @@ while Window.is_open:
     marker_y.p2.y = rot_marker.y
 
     # spinning the donut
-    for i in donut_points:
-        i.pos3d.rotate_x_ip(60 * Window.dt)
-        i.pos3d.rotate_z_ip(60 * Window.dt)
+    if spin_donut:
+        for i in donut_points:
+            i.pos3d.rotate_x_ip(60 * Window.dt)
+            i.pos3d.rotate_z_ip(60 * Window.dt)
 
     Window.finish_frame()
 
