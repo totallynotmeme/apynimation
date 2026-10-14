@@ -227,6 +227,7 @@ def keyboard_handler(ev):
         Viewport.editing_text += ev.unicode
 
 
+# alternative way to define event listeners
 Window.add_event_handler({
     pg.MOUSEBUTTONDOWN: click_handler,
     pg.MOUSEBUTTONUP: unclick_handler,

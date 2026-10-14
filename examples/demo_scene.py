@@ -14,6 +14,7 @@ filler = pg.Surface(Window.res, pg.SRCALPHA)
 filler.fill((0, 0, 0, 10))
 
 main = Scene()
+Window.scene = main
 
 
 Point3d = three_d.Point3d
@@ -92,18 +93,16 @@ click_circle = main.add(Circle(click_position, color=(255, 127, 0), radius=50))
 click_radius = 999
 
 click_limiter = logic.Limiter(1/3)
-def mouse_click_handler(ev):
+
+
+# defining a function that listens for mouse clicks
+@Window.event_handler(pg.MOUSEBUTTONDOWN)
+def on_click(ev):
     global click_radius
     if ev.button == pg.BUTTON_LEFT and click_limiter.call():
         click_position.update(ev.pos)
         click_radius = 0
 
-
-Window.scene = main
-Window.add_event_handler({
-    pg.MOUSEBUTTONDOWN: mouse_click_handler,
-    # ...
-})
 
 while Window.is_open:
     # cube

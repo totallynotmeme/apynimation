@@ -56,16 +56,11 @@ world.add(range_marker_x, range_marker_y, marker_x, marker_y)
 
 spin_donut = True
 
-# @Window.event_handler(pg.KEYDOWN) # TODO:???
-def keydown_handler(ev):
+@Window.event_handler(pg.KEYDOWN)
+def on_keydown(ev):
     global spin_donut
     if ev.key == pg.K_TAB:
         spin_donut = not spin_donut
-
-
-Window.add_event_handler({
-    pg.KEYDOWN: keydown_handler,
-})
 
 
 while Window.is_open:

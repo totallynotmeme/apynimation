@@ -217,7 +217,8 @@ def generate():
         i += 1
 
 
-def keydown_callback(ev):
+@Window.event_handler(pg.KEYDOWN)
+def on_keydown(ev):
     if ev.key == pg.K_r:
         generate()
     if ev.key == pg.K_z:
@@ -235,11 +236,6 @@ def keydown_callback(ev):
                     i.flag = not i.flag
                     Cell.flagged += i.flag * 2 - 1
                 break
-
-
-Window.add_event_handler({
-    pg.KEYDOWN: keydown_callback,
-})
 
 
 mines_label = Text(font, pos=(10, 10))

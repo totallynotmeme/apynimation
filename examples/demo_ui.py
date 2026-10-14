@@ -98,15 +98,13 @@ click_radius = 999
 
 click_limiter = logic.Limiter(1/3)
 
-def mouse_click_handler(ev):
+
+@cursor_demo.event_handler(pg.MOUSEBUTTONDOWN)
+def on_click(ev):
     global click_radius
     if ev.button == pg.BUTTON_LEFT and click_limiter.call():
         click_position.update(ev.pos)
         click_radius = 0
-
-cursor_demo.add_event_handler({
-    pg.MOUSEBUTTONDOWN: mouse_click_handler,
-})
 
 
 ## 3d scene
@@ -187,16 +185,14 @@ scene_tape = logic.Tape(
 )
 
 
-def keyboard_handler(ev):
+@Window.event_handler(pg.KEYDOWN)
+def on_keydown(ev):
     if ev.key == pg.K_TAB:
         if Input.shift:
             Window.scene = scene_tape.prev()
         else:
             Window.scene = scene_tape.next()
 
-Window.add_event_handler({
-    pg.KEYDOWN: keyboard_handler,
-})
 
 Window.scene = about_demo
 

@@ -177,6 +177,13 @@ class Window(Container):
             if func is not None:
                 func(ev)
 
+    def event_handler(ev_type, _nowarn=False):
+        # a decorator-ish way to define an event handler
+        def _adder(func):
+            Window.add_event_handler({ev_type: func}, _nowarn=_nowarn)
+            return func
+        return _adder
+
     def add_event_handler(new_map, _nowarn=False):
         Window.event_map.update(new_map)
         if pg.QUIT in new_map and not _nowarn:
@@ -222,6 +229,13 @@ class Scene(Container):
         a = Layer(*args, **kwargs)
         self.layers.append(a)
         return a
+
+    def event_handler(self, ev_type, _nowarn=False):
+        # mirror of Window.event_handler decorator
+        def _adder(func):
+            self.event_map[ev_type] = func
+            return func
+        return _adder
 
     def add_event_handler(self, new_map, _nowarn=False):
         # _nowarn to keep parity between Window and Scene, unused here
