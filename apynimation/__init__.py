@@ -383,8 +383,8 @@ class Rect(Drawable):
             if isinstance(self.p2, Point):
                 self.p2.step(t)
             points = [self.p1, self.p2]
-            left, right = sorted(i.x for i in points)
-            top, bottom = sorted(i.y for i in points)
+            left, right = sorted(i[0] for i in points)
+            top, bottom = sorted(i[1] for i in points)
             self.x = left
             self.y = top
             self.w = right - left
@@ -444,8 +444,8 @@ class CircleNgon(Circle):
 
 # something other than vector graphics
 class Sprite(Drawable):
-    def __init__(self, pos=(0, 0), point=None, surface=None, align="topleft"):
-        self.pos = pg.Vector2(pos)
+    def __init__(self, pos=None, point=None, surface=None, align="topleft"):
+        self.pos = pos or pg.Vector2()
         self.point = point
         self.surface = surface
         self.align = align
