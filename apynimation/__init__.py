@@ -143,10 +143,11 @@ class Window(Container):
         return Window.center
 
     def finish_frame():
+        scene = Window.scene
         # rendering
         Window.clear()
-        if Window.scene is not None:
-            Window.scene.step_and_draw(Window.surface)
+        if scene is not None:
+            scene.step_and_draw(Window.surface)
 
         for obj in Window.objects:
             if obj.active:
@@ -159,8 +160,8 @@ class Window(Container):
 
         # handling stuff
         Window.t += Window.dt
-        if Window.scene is not None:
-            Window.scene.t += Window.dt
+        if scene is not None:
+            scene.t += Window.dt
 
         Input.step()
         for ev in pg.event.get():
@@ -171,9 +172,9 @@ class Window(Container):
                     continue
 
             # pass event to Scene if it's set
-            if Window.scene is None:
+            if scene is None:
                 continue
-            func = Window.scene.event_map.get(ev.type)
+            func = scene.event_map.get(ev.type, scene.global_handler)
             if func is not None:
                 func(ev)
 
@@ -206,6 +207,8 @@ Window.event_map[pg.QUIT] = Window.close # default
 
 # actually usable containers
 class Scene(Container):
+    global_handler = None # default
+
     def __init__(self):
         self.t = 0
         self.layers = []
