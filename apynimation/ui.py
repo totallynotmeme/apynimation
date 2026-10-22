@@ -3,7 +3,13 @@
 # v0.0.0-indev  /  use current commit as the version
 
 import pygame as pg
-from . import Input, Drawable
+from . import Input, Drawable, Scene
+
+
+class current:
+    hovering = None
+    holding = None
+    selected = None
 
 
 class Theme:
@@ -27,6 +33,48 @@ class Theme:
         self.dark.hsva = (h, s, max(v - 10, 0), a)
 
 default_theme = Theme((0, 75, 150))
+
+
+class SceneUI(Scene):
+    def step_and_draw(self, target):
+        current.hovering = None
+        if Input.mouse_just_released[0]:
+            current.holding = None
+        if Input.mouse_just_pressed[0]:
+            current.selected = None
+
+        for i in reversed(self.objects): # scanning top-to-bottom
+            rect = getattr(i, "rect")
+            if rect is None or not rect.collidepoint(Input.mouse_pos):
+                continue
+
+            current.hovering = i
+            if Input.mouse_just_pressed[0]:
+                current.holding = i
+                current.selected = i
+                # moving to the front
+                self.objects.remove(i)
+                self.objects.append(i)
+            break
+
+        super().step_and_draw(target)
+
+        """
+        if current.hovering:
+            pg.draw.rect(target, "yellow", current.hovering.rect, 3)
+        if current.holding:
+            pg.draw.rect(target, "red", current.holding.rect, 2)
+        if current.selected:
+            pg.draw.rect(target, "pink", current.selected.rect, 1)
+        """
+
+    def global_handler(self, ev):
+        if current.selected is None:
+            return False
+        event_map = getattr(current.selected, "event_map")
+        if event_map is None or ev.type not in event_map:
+            return False
+        return event_map[ev.type](ev)
 
 
 STATE_IDLE = 0

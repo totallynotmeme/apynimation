@@ -1,5 +1,6 @@
 from apynimation import *
 from apynimation import logic, ui, three_d
+import random
 
 
 Window.set_res((1600, 900))
@@ -12,10 +13,12 @@ class Scene_button(ui.Button):
     _ind = 0
     font = pg.font.SysFont("consolas", 20)
     theme = ui.Theme((20, 60, 100))
+    scenes_list = []
 
     def __init__(self, name, scene):
         self.name = name
         self.scene = scene
+        Scene_button.scenes_list.append(scene)
 
         x = 110
         y = Scene_button._ind * 60 + 35
@@ -161,6 +164,52 @@ def _clear():
 layers_demo_l1.clear = _clear
 
 
+## interactive user interface
+ui_demo = ui.SceneUI()
+Window.add(Scene_button("Interactive", ui_demo))
+
+
+# creating a draggable element. UI elements must have a .rect property to work
+class Box(Drawable):
+    def __init__(self, x, y):
+        self.rect = pg.Rect(x, y, 150, 150)
+        self.color = pg.Color(0)
+        self.randomize_color()
+        # defining a function map for SceneUI to hook onto
+        self.event_map = {
+            pg.MOUSEMOTION: self.drag,
+            pg.KEYDOWN: self.randomize_color,
+        }
+
+    def draw(self, target):
+        pg.draw.rect(target, self.color, self.rect)
+        if ui.current.selected == self:
+            pg.draw.rect(target, "white", self.rect, 5)
+
+    # functions below get called when certain events are triggered (see above)
+
+    def drag(self, ev):
+        if ui.current.holding == self:
+            self.rect.move_ip(ev.rel)
+            # keep it inside the window
+            self.rect.clamp_ip((0, 0, *Window.res))
+
+    def randomize_color(self, ev=None): # event argument is unused here
+        # TODO:? simpler hsv function, unless that already exists and im blind
+        self.color.hsva = (random.randint(0, 359), 50, 80, 100)
+
+
+for x in range(250, Window.res[0]-200, 200):
+    for y in range(150, Window.res[1]-200, 200):
+        ui_demo.add(Box(x, y))
+
+font = pg.font.SysFont("consolas", 25)
+ui_demo.add(
+    Text(font, "Draggable boxes", pos=(220, 50)),
+    Text(font, "Try pressing a key after selecting one", pos=(220, 85)),
+)
+
+
 ## other stuff (only n-gons so far)
 other_demo = Scene()
 Window.add(Scene_button("Other", other_demo))
@@ -180,7 +229,7 @@ for i in ngons:
 
 # switching scenes with Tab
 scene_tape = logic.Tape(
-    [about_demo, cursor_demo, donut_demo, layers_demo, other_demo],
+    Scene_button.scenes_list,
     _ind=0 # we already have about_demo selected by default
 )
 
