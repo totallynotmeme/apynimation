@@ -67,7 +67,7 @@ class Cell(ui.Button):
         self.mine = None
         self.flag = False
         self.center = pg.Vector2(self.pos) + (cell_size/2, cell_size/2)
-        self.label = Text(font, text="?", point=self.center, align="center")
+        self.label = Text(font, text="?", pos=self.center, align="center")
         self.show_label = False
         self.open_t = -1
         self.highlight_rect = pg.Rect(
@@ -259,7 +259,7 @@ mines_label = Text(font, pos=(10, 10))
 scene.add(mines_label)
 
 
-win_rect = Rect(Point(0, 0), Point(Window.res), color=(50, 200, 50), width=10)
+win_rect = Rect(Point(0, 0), *Window.res, color=(50, 200, 50), width=10)
 win_rect.active = False
 scene.add(win_rect)
 

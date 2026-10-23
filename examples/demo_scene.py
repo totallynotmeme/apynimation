@@ -68,10 +68,10 @@ sun_sides = 8
 sun_angle = 0
 
 sun_ngon = CircleNgon(
-    center_point = sun_point,
+    center = sun_point,
+    r = 33,
     color = sun_color,
     sides = sun_sides,
-    radius = 33,
     width = 3
 )
 sun_ticker = logic.Ticker(time=0.3)
@@ -89,7 +89,7 @@ for i in range(sun_sides):
 
 
 click_position = Point()
-click_circle = main.add(Circle(click_position, color=(255, 127, 0), radius=50))
+click_circle = main.add(Circle(click_position, r=50, color=(255, 127, 0)))
 click_radius = 999
 
 click_limiter = logic.Limiter(1/3)

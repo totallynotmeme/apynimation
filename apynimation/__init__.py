@@ -359,14 +359,15 @@ class Wireframe(Polygon):
 
 # shapes
 class Rect(Drawable):
-    def __init__(self, p1, p2=None, w=50, h=20, color="white", width=0):
+    def __init__(self, p1, w=50, h=20, p2=None, color="white", width=0):
         self.p1 = p1
-        self.p2 = p2
         self.w = w
         self.h = h
+        self.p2 = p2
         self.color = color
         self.width = width # bruh
         self.rect = pg.Rect(0, 0, 0, 0)
+        self.x, self.y = p1
 
     def __repr__(self):
         if self.p2 is None:
@@ -402,32 +403,37 @@ class Rect(Drawable):
 
 
 class Circle(Drawable):
-    def __init__(self, center_point, radius_point=None, color="white", width=1, radius=0):
-        self.center_point = center_point
-        self.radius_point = radius_point
-        self.center = pg.Vector2()
+    def __init__(self, center, r=20, color="white", width=1):
+        self.center = center
+        self.radius = r
         self.color = color
         self.width = width
-        self.radius = radius # gets automatically set if radius_point is a Point()
-        self.step()
 
     def __repr__(self):
         return f"<{self.__class__.__name__} @ {self.center} r={self.radius:.2f}px>"
 
     def step(self, t=0):
-        if isinstance(self.center_point, Point):
-            self.center_point.step(t)
-        self.center.update(self.center_point)
-        if self.radius_point is not None:
-            if isinstance(self.radius_point, Point):
-                self.radius_point.step(t)
-            self.radius = self.center.distance_to(self.radius_point)
+        if isinstance(self.center, Point):
+            self.center.step(t)
 
     def draw(self, target):
         pg.draw.circle(target, self.color, self.center, self.radius, self.width)
 
     def collidepoint(self, point): # name based on pygame.Rect.collidepoint
         return self.center.distance_to(point) <= self.radius
+
+
+class CircleAnchored(Circle):
+    def __init__(self, center, anchor, *args, **kwargs):
+        super().__init__(center, *args, **kwargs)
+        self.anchor = anchor
+        self.step()
+
+    def step(self, t=0):
+        super().step(t)
+        if isinstance(self.anchor, Point):
+            self.anchor.step(t)
+        self.radius = self.center.distance_to(self.anchor)
 
 
 class CircleNgon(Circle):
@@ -447,10 +453,9 @@ class CircleNgon(Circle):
 
 # something other than vector graphics
 class Sprite(Drawable):
-    def __init__(self, pos=None, point=None, surface=None, align="topleft"):
-        self.pos = pos or pg.Vector2()
-        self.point = point
+    def __init__(self, surface, pos=None, align="topleft"):
         self.surface = surface
+        self.pos = pos or pg.Vector2()
         self.align = align
         self.rect = pg.Rect(0, 0, 0, 0)
 
@@ -458,10 +463,8 @@ class Sprite(Drawable):
         return f"<{self.__class__.__name__} @ {self.pos}>"
 
     def step(self, t=0):
-        if self.point is not None:
-            if isinstance(self.point, Point):
-                self.point.step(t)
-            self.pos.update(self.point)
+        if isinstance(self.pos, Point):
+            self.pos.step(t)
 
     def draw(self, target):
         pos = self.surface.get_rect(**{self.align: self.pos})

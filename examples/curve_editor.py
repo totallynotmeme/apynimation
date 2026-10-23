@@ -97,7 +97,7 @@ class CurvePoint(Point):
 main = Scene()
 
 preview_point = Point()
-preview_circle = main.add(Circle(preview_point, color="red", width=0, radius=7))
+preview_circle = main.add(Circle(preview_point, r=7, color="red", width=0))
 
 visual_points = []
 for key, val in curve_points.items():
@@ -123,8 +123,10 @@ edge_l = Line(Point(), Point())
 edge_r = Line(Point(), Point())
 main.add(edge_l, edge_r)
 
-trail = Sprite((0, Window.res[1] - 20))
-trail.surface = pg.Surface((Window.res[0], 20))
+trail = Sprite(
+    surface = pg.Surface((Window.res[0], 20)),
+    pos = (0, Window.res[1] - 20),
+)
 main.add(trail)
 
 left_edge = Point(0, Window.res[1]-25) # x gets set later in the code

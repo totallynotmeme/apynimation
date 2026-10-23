@@ -26,7 +26,7 @@ class Scene_button(ui.Button):
         topleft = Point(x-100, y-25)
 
         Scene_button._ind += 1
-        self.label = Text(font=Scene_button.font, text=name, point=center, align="center")
+        self.label = Text(Scene_button.font, name, pos=center, align="center")
         super().__init__(topleft, (200, 50), theme=Scene_button.theme)
 
     def callback(self):
@@ -96,7 +96,7 @@ cursor_demo.add(cursor_trail)
 
 # click bubble
 click_position = Point()
-click_circle = cursor_demo.add(Circle(click_position, color=(0, 127, 255), radius=50))
+click_circle = cursor_demo.add(Circle(click_position, r=50, color=(0, 127, 255)))
 click_radius = 999
 
 click_limiter = logic.Limiter(1/3)
@@ -217,10 +217,10 @@ Window.add(Scene_button("Other", other_demo))
 center_point = Point(Window.res)
 center_point /= 2
 ngons = [
-    CircleNgon(center_point, width=1, radius=50, sides=5),
-    CircleNgon(center_point, width=3, radius=100, sides=6),
-    CircleNgon(center_point, width=5, radius=150, sides=7),
-    CircleNgon(center_point, width=2, radius=200, sides=8, color=(0, 127, 255)),
+    CircleNgon(center_point, r=50, width=1, sides=5),
+    CircleNgon(center_point, r=100, width=3, sides=6),
+    CircleNgon(center_point, r=150, width=5, sides=7),
+    CircleNgon(center_point, r=200, width=2, sides=8, color=(0, 127, 255)),
 ]
 for i in ngons:
     other_demo.add(i)
