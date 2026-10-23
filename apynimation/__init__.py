@@ -310,7 +310,7 @@ class Line(Drawable):
     def __init__(self, p1, p2, color="white", width=1):
         self.p1 = p1
         self.p2 = p2
-        self.color = pg.Color(color)
+        self.color = color
         self.width = width
 
     def __repr__(self):
@@ -329,7 +329,7 @@ class Line(Drawable):
 class Polygon(Drawable):
     def __init__(self, points, color="white", width=0):
         self.points = points
-        self.color = pg.Color(color)
+        self.color = color
         self.width = width
 
     def __repr__(self):
@@ -406,7 +406,7 @@ class Circle(Drawable):
         self.center_point = center_point
         self.radius_point = radius_point
         self.center = pg.Vector2()
-        self.color = pg.Color(color)
+        self.color = color
         self.width = width
         self.radius = radius # gets automatically set if radius_point is a Point()
         self.step()
