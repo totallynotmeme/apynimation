@@ -70,6 +70,10 @@ class Cell(ui.Button):
         self.label = Text(font, text="?", point=self.center, align="center")
         self.show_label = False
         self.open_t = -1
+        self.highlight_rect = pg.Rect(
+            self.rect.x-2, self.rect.y-2,
+            self.rect.w+4, self.rect.h+4,
+        )
 
     def reset(self):
         self.mine_state = None
@@ -94,7 +98,19 @@ class Cell(ui.Button):
             # mine
             pg.draw.circle(target, "black", self.center, cell_size/2 - 5)
         elif self.show_label:
-            # number
+            # highlights
+            if Input.shift and self.state == ui.STATE_HOVERING:
+                mines_left = self.mine_state
+                for i in self.neighbours:
+                    if i.mine_state is not None:
+                        continue
+                    pg.draw.rect(target, "white", i.highlight_rect, 1, 5)
+                    if i.flag:
+                        mines_left -= 1
+                self.label.text = str(mines_left)
+            else:
+                # number
+                self.label.text = str(self.mine_state)
             self.label.step()
             self.label.draw(target)
         elif self.flag:
@@ -164,7 +180,8 @@ class Cell(ui.Button):
             self.mine_state = 0
             # if no mines nearby, flood-open neighbour cells
             for i in self.neighbours:
-                i.open_t = 5
+                if i.open_t < 0:
+                    i.open_t = 3
 
 
 scene = Scene()
