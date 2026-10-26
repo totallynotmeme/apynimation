@@ -13,7 +13,7 @@ class Ticker:
         self._val = _val
 
     def __repr__(self):
-        return f"Ticker(time={self.time} wrap={self.wrap} _val={self._val})"
+        return f"<{self.__class__.__name__} time={self.time} _val={self._val}>"
 
     def step(self, dt=None):
         self._val += dt or Window.dt
@@ -55,7 +55,7 @@ class Tape:
         self.ind = _ind
 
     def __repr__(self):
-        return f"<Tape x{len(self.elements)} elements ind={self.ind}>"
+        return f"<{self.__class__.__name__} x{len(self.elements)} elements ind={self.ind}>"
 
     # these two can probably be merged into a generic .shift()
     # but i find .prev() and .next() more readable
@@ -108,7 +108,7 @@ class Limiter:
         self.last_call = _last_call or -999999999 # float("-inf") doesn't exist
 
     def __repr__(self):
-        return f"<Limiter every {self.cooldown}s>"
+        return f"<{self.__class__.__name__} every {self.cooldown}s>"
 
     def call(self):
         dt = Window.t - self.last_call
@@ -149,6 +149,9 @@ class Curve:
     def __init__(self, points):
         self.points = points
         self.update_points()
+
+    def __repr__(self):
+        return f"{self.__class__.__name__} x{len(self.points)} points"
 
     def update_points(self):
         self._bisect_points = sorted(self.points.keys())
@@ -217,7 +220,7 @@ class Timer:
         self.trigger_at = -1
 
     def __repr__(self):
-        return f"<Timer {self.time}s>"
+        return f"<{self.__class__.__name__} {self.time}s>"
 
     def start(self, restart=False):
         if not restart and self.trigger_at >= 0:
@@ -259,7 +262,7 @@ class Trail:
         self.size = size
 
     def __repr__(self):
-        return f"<Trail {len(self.items)}/{self.size} items>"
+        return f"<{self.__class__.__name__} {len(self.items)}/{self.size} items>"
 
     def put(self, value):
         if len(self.items) < self.size:
