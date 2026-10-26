@@ -44,7 +44,7 @@ class SceneUI(Scene):
             current.selected = None
 
         for i in reversed(self.objects): # scanning top-to-bottom
-            rect = getattr(i, "rect")
+            rect = getattr(i, "rect", None)
             if rect is None or not rect.collidepoint(Input.mouse_pos):
                 continue
 
