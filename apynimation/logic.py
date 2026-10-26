@@ -173,6 +173,31 @@ class Curve:
         return next_val * f + prev_val * (1-f)
 
 
+class CurveLerp(Curve):
+    """
+    [[placeholder docstring]]
+    same as Curve(), but uses a.lerp(b, factor) to interpolate between values.
+    this is mainly useful for transitions between pygame.Color()s
+    """
+
+    def get(self, val):
+        if val <= self._bisect_points[0]:
+            return self.points[self._bisect_points[0]]
+        if val >= self._bisect_points[-1]:
+            return self.points[self._bisect_points[-1]]
+
+        next_i = bisect_right(self._bisect_points, val)
+        next_p = self._bisect_points[next_i]
+        next_val = self.points[next_p]
+        prev_i = next_i - 1
+        prev_p = self._bisect_points[prev_i]
+        prev_val = self.points[prev_p]
+
+        dist = next_p - prev_p
+        f = (val - prev_p) / dist
+        return prev_val.lerp(next_val, f)
+
+
 class Timer:
     """
     [[placeholder docstring]]
