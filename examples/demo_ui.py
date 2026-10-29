@@ -117,7 +117,7 @@ Window.add(Scene_button("3D donut", donut_demo))
 # so we don't have to type three_d.Point3d every time
 Point3d = three_d.Point3d
 
-camera = three_d.Camera(pos=(0, 0, -450), focal_length=350)
+camera = three_d.Camera3d(pos=(0, 0, -450), focal_length=350)
 donut_points = []
 
 # forming a donut with a bunch of circles

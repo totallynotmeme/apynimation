@@ -1,5 +1,5 @@
 # /apynimation/ui.py
-# includes interactive components for a user interface
+# includes interactive components and stuff to create a user interface
 # v0.0.0-indev  /  use current commit as the version
 
 import pygame as pg
@@ -14,6 +14,8 @@ class current:
 
 class Theme:
     def __init__(self, base):
+        self.bright = pg.Color(0)
+        self.dark = pg.Color(0)
         self.color = base
 
     def __repr__(self):
@@ -27,15 +29,15 @@ class Theme:
     def color(self, val):
         self.base = pg.Color(val)
         h, s, v, a = self.base.hsva
-        self.bright = pg.Color(0)
         self.bright.hsva = (h, s, min(v + 10, 100), a)
-        self.dark = pg.Color(0)
         self.dark.hsva = (h, s, max(v - 10, 0), a)
 
 default_theme = Theme((0, 75, 150))
 
 
 class SceneUI(Scene):
+    debug = False
+
     def step_and_draw(self, target):
         current.hovering = None
         if Input.mouse_just_released[0]:
@@ -43,7 +45,7 @@ class SceneUI(Scene):
         if Input.mouse_just_pressed[0]:
             current.selected = None
 
-        for i in reversed(self.objects): # scanning top-to-bottom
+        for i in reversed(self.objects): # scanning front element first
             rect = getattr(i, "rect", None)
             if rect is None or not rect.collidepoint(Input.mouse_pos):
                 continue
@@ -58,20 +60,18 @@ class SceneUI(Scene):
             break
 
         super().step_and_draw(target)
-
-        """
-        if current.hovering:
-            pg.draw.rect(target, "yellow", current.hovering.rect, 3)
-        if current.holding:
-            pg.draw.rect(target, "red", current.holding.rect, 2)
-        if current.selected:
-            pg.draw.rect(target, "pink", current.selected.rect, 1)
-        """
+        if self.debug:
+            if current.hovering:
+                pg.draw.rect(target, "yellow", current.hovering.rect, 3)
+            if current.holding:
+                pg.draw.rect(target, "red", current.holding.rect, 2)
+            if current.selected:
+                pg.draw.rect(target, "pink", current.selected.rect, 1)
 
     def global_handler(self, ev):
         if current.selected is None:
             return False
-        event_map = getattr(current.selected, "event_map")
+        event_map = getattr(current.selected, "event_map", None)
         if event_map is None or ev.type not in event_map:
             return False
         return event_map[ev.type](ev)

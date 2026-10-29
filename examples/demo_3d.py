@@ -18,6 +18,7 @@ Window.create("Demo scene")
 
 world = Scene()
 Window.scene = world
+camera = Camera3d.default
 
 
 donut_points = []
@@ -76,7 +77,7 @@ while Window.is_open:
         0 #Input.keyboard_keys[pg.K_q] - Input.keyboard_keys[pg.K_e],
         # TODO: roll ^^^
     )
-    motion_dir.rotate_y_ip(-default_camera.rot.x)
+    motion_dir.rotate_y_ip(-camera.rot.x)
 
     speed = 30
     rot_speed = 90
@@ -87,13 +88,13 @@ while Window.is_open:
         speed /= 10
         rot_speed /= 10
 
-    default_camera.pos += motion_dir * speed * Window.dt
-    default_camera.rot += rotation_dir * rot_speed * Window.dt
-    default_camera.rot.y = min(max(default_camera.rot.y, -89), 89)
+    camera.pos += motion_dir * speed * Window.dt
+    camera.rot += rotation_dir * rot_speed * Window.dt
+    camera.rot.y = min(max(camera.rot.y, -89), 89)
 
     # updating the ui
-    rot_marker.x = (default_camera.rot.x + 180) % 360 - 180
-    rot_marker.y = -default_camera.rot.y
+    rot_marker.x = (camera.rot.x + 180) % 360 - 180
+    rot_marker.y = -camera.rot.y
     rot_marker += Window.center
 
     marker_x.p1.x = rot_marker.x

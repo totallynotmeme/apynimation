@@ -19,7 +19,7 @@ def _project(pos3d, target2d, focal_length):
 class Point3d(Point):
     def __init__(self, *args, camera=None):
         self.pos3d = Vector3(*args)
-        self.camera = camera or default_camera # default_camera defined lower
+        self.camera = camera or Camera3d.default
         self.prev_t = -1
         self.valid = False
 
@@ -54,7 +54,7 @@ class Point3d(Point):
         self.valid = True
 
 
-class Camera:
+class Camera3d:
     def __init__(self, pos=None, focal_length=250):
         self.pos = pos or Vector3()
         self.rot = Vector3()
@@ -73,7 +73,7 @@ class Camera:
             val = val.pos3d
         self._pos = val
 
-default_camera = Camera()
+Camera3d.default = Camera3d()
 
 
 class Line3d(Line):

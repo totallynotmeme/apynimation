@@ -1,6 +1,6 @@
 from apynimation import *
 from apynimation import logic
-from apynimation import three_d
+from apynimation.three_d import *
 from math import sin
 
 
@@ -17,14 +17,12 @@ main = Scene()
 Window.scene = main
 
 
-Point3d = three_d.Point3d
-
 ground = main.create_layer()
 ground.clear = lambda: ground.surf.blit(filler, (0, 0))
 ground.blit = lambda target: target.blit(ground.surf, (0, 0), None, pg.BLEND_ADD)
 
 ground_camera_pos = Point3d(0, -50, -230)
-ground_camera = three_d.Camera(ground_camera_pos)
+ground_camera = Camera3d(ground_camera_pos)
 
 ground_points = []
 for x in range(-10, 10):
@@ -44,7 +42,7 @@ for x in range(20):
     ground.add(Wireframe([ground_points[i] for i in inds], color))
 
 
-cube_camera = three_d.Camera(pos=Point3d(0, 0, -200))
+cube_camera = Camera3d(pos=Point3d(0, 0, -200))
 
 # cube
 cube_points = [
