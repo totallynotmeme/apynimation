@@ -259,7 +259,7 @@ mines_label = Text(font, pos=(10, 10))
 scene.add(mines_label)
 
 
-win_rect = Rect(Point(0, 0), *Window.res, color=(50, 200, 50), width=10)
+win_rect = Rect(0, 0, *Window.res, color=(50, 200, 50), width=10)
 win_rect.active = False
 scene.add(win_rect)
 

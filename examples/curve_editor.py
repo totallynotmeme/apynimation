@@ -148,7 +148,7 @@ label_x_to._value = "x_to"
 label_y_to._value = "y_to"
 
 
-export_button = Rect(Point(Viewport.w + 30, 120), w=250, h=60)
+export_button = Rect(Viewport.w + 30, 120, 250, 60)
 export_button.step() # setting up .rect.center
 button_origin = export_button.rect.center
 

@@ -48,8 +48,8 @@ world.add(Line3d(b, c))
 # rotation markers
 rot_marker = Point()
 
-range_marker_x = Rect((Window.center.x-180, 0), w=360, h=20, color=(63, 63, 63))
-range_marker_y = Rect((0, Window.center.y-90), w=20, h=180, color=(63, 63, 63))
+range_marker_x = Rect(Window.center.x-180, 0, w=360, h=20, color=(63, 63, 63))
+range_marker_y = Rect(0, Window.center.y-90, w=20, h=180, color=(63, 63, 63))
 marker_x = Line(Point(0, 0), Point(0, 50), width=5)
 marker_y = Line(Point(0, 0), Point(50, 0), width=5)
 world.add(range_marker_x, range_marker_y, marker_x, marker_y)

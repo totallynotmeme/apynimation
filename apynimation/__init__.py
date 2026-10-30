@@ -359,40 +359,40 @@ class Wireframe(Polygon):
 
 # shapes
 class Rect(Drawable):
-    def __init__(self, p1, w=50, h=20, p2=None, color="white", width=0):
-        self.p1 = p1
+    def __init__(self, x=0, y=0, w=50, h=20, color="white", width=0, p1=None, p2=None):
+        self.x = x
+        self.y = y
         self.w = w
         self.h = h
+        self.p1 = p1
         self.p2 = p2
         self.color = color
         self.width = width # bruh
         self.rect = pg.Rect(0, 0, 0, 0)
-        self.x, self.y = p1
+        # if self.p1 is None and self.p2 is not None:
+        #     raise something i guess??
 
     def __repr__(self):
-        if self.p2 is None:
-            suffix = f"{self.w}x{self.h}"
-        else:
-            suffix = f"-- {self.p2}"
-        return f"{self.__class__.__name__}  {self.p1} {suffix}"
+        return f"<{self.__class__.__name__} ({self.x}, {self.y}) {self.w}x{self.h}>"
 
     def step(self, t=0):
-        if self.p2 is None:
-            if isinstance(self.p1, Point):
-                self.p1.step(t)
+        if isinstance(self.p1, Point):
+            self.p1.step()
+        if isinstance(self.p2, Point):
+            self.p2.step()
+
+        if self.p1 is None:
+            # no points set (p1=None p2=Point() is invalid)
+            pass
+        elif self.p2 is None:
+            # only p1 (topleft) is set
             self.x, self.y = self.p1
         else:
-            if isinstance(self.p1, Point):
-                self.p1.step(t)
-            if isinstance(self.p2, Point):
-                self.p2.step(t)
-            points = [self.p1, self.p2]
-            left, right = sorted(i[0] for i in points)
-            top, bottom = sorted(i[1] for i in points)
-            self.x = left
-            self.y = top
-            self.w = right - left
-            self.h = bottom - top # 0 is up, 100 is down
+            # both p1 and p2 are set
+            self.x = min(self.p1[0], self.p2[0])
+            self.y = min(self.p1[1], self.p2[1])
+            self.w = abs(self.p1[0] - self.p2[0])
+            self.h = abs(self.p1[1] - self.p2[1])
         self.rect.update(self.x, self.y, self.w, self.h)
 
     def draw(self, target):
