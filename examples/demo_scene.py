@@ -94,8 +94,8 @@ click_limiter = logic.Limiter(1/3)
 
 
 # defining a function that listens for mouse clicks
-@Window.event_handler(pg.MOUSEBUTTONDOWN)
-def on_click(ev):
+@Window.event_handler
+def on_mousebuttondown(ev):
     global click_radius
     if ev.button == pg.BUTTON_LEFT and click_limiter.call():
         click_position.update(ev.pos)

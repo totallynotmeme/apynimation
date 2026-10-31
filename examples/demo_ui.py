@@ -102,8 +102,8 @@ click_radius = 999
 click_limiter = logic.Limiter(1/3)
 
 
-@cursor_demo.event_handler(pg.MOUSEBUTTONDOWN)
-def on_click(ev):
+@cursor_demo.event_handler
+def on_mousebuttondown(ev):
     global click_radius
     if ev.button == pg.BUTTON_LEFT and click_limiter.call():
         click_position.update(ev.pos)
@@ -234,7 +234,7 @@ scene_tape = logic.Tape(
 )
 
 
-@Window.event_handler(pg.KEYDOWN)
+@Window.event_handler
 def on_keydown(ev):
     if ev.key == pg.K_TAB:
         if Input.shift:

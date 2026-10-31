@@ -3,12 +3,28 @@
 # v0.0.0-indev  /  use current commit as the version
 
 import pygame as pg
+import pygame.locals
 from math import ceil
 
 
 # helper functions / aliases to existing functions for easier access
 # ceil - imported above
 lerp = pg.math.lerp
+
+# for @event_handler decorators
+def _guess_event_type(name):
+    func_name = name.upper().replace("_", "")
+    func_name = func_name.removeprefix("ON").removesuffix("HANDLER")
+    ev_type = getattr(pg.locals, func_name, None)
+    if ev_type is None:
+        # oops
+        raise ValueError(f"""
+Failed to guess event handler type. Please specify the event type with \
+'def on_EVENT_TYPE(...)', 'def EVENT_TYPE_handler(...)', or at decorator with \
+'@event_handler(pg.EVENT_TYPE)'
+"""[1:-1])
+    return ev_type
+
 
 
 # user inputs
@@ -178,12 +194,23 @@ class Window(Container):
             if func is not None:
                 func(ev)
 
-    def event_handler(ev_type, _nowarn=False):
+    def event_handler(arg, _nowarn=False):
         # a decorator-ish way to define an event handler
-        def _adder(func):
-            Window.add_event_handler({ev_type: func}, _nowarn=_nowarn)
-            return func
-        return _adder
+        if type(arg) is int:
+            # @event_handler(pg.EVENT_TYPE) / def func(...)
+            ev_type = arg
+            def _adder(func):
+                Window.add_event_handler({ev_type: func}, _nowarn=_nowarn)
+                return func
+            return _adder
+        # assuming @event_handler / def on_EVENT_TYPE(...)
+        func = arg
+        ev_type = _guess_event_type(func.__name__)
+        # hopefully it's a valid event
+        name = pg.event.event_name(ev_type)
+        print(f"@event_handler: guessed {func.__name__} to be {name} ({ev_type})")
+        Window.add_event_handler({ev_type: func}, _nowarn=_nowarn)
+        return func
 
     def add_event_handler(new_map, _nowarn=False):
         Window.event_map.update(new_map)
@@ -233,12 +260,22 @@ class Scene(Container):
         self.layers.append(a)
         return a
 
-    def event_handler(self, ev_type, _nowarn=False):
+    def event_handler(self, arg, _nowarn=False):
         # mirror of Window.event_handler decorator
-        def _adder(func):
-            self.event_map[ev_type] = func
-            return func
-        return _adder
+        if type(arg) is int:
+            # @event_handler(pg.EVENT_TYPE) / def func(...)
+            ev_type = arg
+            def _adder(func):
+                self.event_map[ev_type] = func
+                return func
+            return _adder
+        # assuming @event_handler / def on_EVENT_TYPE(...)
+        func = arg
+        ev_type = _guess_event_type(func.__name__)
+        name = pg.event.event_name(ev_type)
+        print(f"@event_handler: guessed {func.__name__} to be {name} ({ev_type})")
+        self.event_map[ev_type] = func
+        return func
 
     def add_event_handler(self, new_map, _nowarn=False):
         # _nowarn to keep parity between Window and Scene, unused here
