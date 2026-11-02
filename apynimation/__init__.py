@@ -110,78 +110,75 @@ class Drawable:
 
 
 # if there's a window in Windows, is there a linu in Linux?
-class Window(Container):
-    # no __init__ because pygame doesn't support multiple windows, and
-    # i don't see a point in implementing virtual windows or something
-    is_open = False
-    surface = None
-    clock = None
+class _WindowClass(Container):
+    def __init__(self):
+        # this should not be used to create multiple Window objects,
+        # but you do you.
+        super().__init__()
 
-    # maybe refactor later?
-    _container = Container()
-    objects = _container.objects
-    add = _container.add
-    remove = _container.remove
+        self.is_open = False
+        self.surface = None
+        self.clock = None
 
-    scene = None
-    event_map = {}
+        self.scene = None
+        self.event_map = {}
 
-    res = (640, 480) # default
-    center = pg.Vector2(res) / 2
-    fps = 60 # default
-    dt = 1/60
-    t = 0
+        self.res = (640, 480) # default
+        self.center = pg.Vector2(self.res) / 2
+        self.fps = 60 # default
+        self.dt = 1/60
+        self.t = 0
 
-    def create(caption="Untitled window", **kwargs):
+    def create(self, caption="Untitled window", **kwargs):
         # surely nothing will break if you try to call create() multiple times
         pg.init()
         pg.display.set_caption(caption)
-        Window.surface = pg.display.set_mode(Window.res, **kwargs)
-        Window.clock = pg.time.Clock()
-        Window.is_open = True
+        self.surface = pg.display.set_mode(self.res, **kwargs)
+        self.clock = pg.time.Clock()
+        self.is_open = True
         Input.step()
         # double-check the window size in case system changes it (ex: pydroid)
-        Window.set_res(Window.surface.get_size())
+        self.set_res(self.surface.get_size())
 
-    def close(ev=None): # ev argument used for event handling
-        Window.is_open = False
+    def close(self, ev=None): # ev argument used for event handling
+        self.is_open = False
         pg.quit()
         return True
 
-    def set_fps(fps):
-        Window.fps = fps
-        Window.dt = 1/fps
-        return Window.dt
+    def set_fps(self, fps):
+        self.fps = fps
+        self.dt = 1/fps
+        return self.dt
 
-    def set_res(res):
-        Window.res = res
-        Window.center = pg.Vector2(res) / 2
-        return Window.center
+    def set_res(self, res):
+        self.res = res
+        self.center = pg.Vector2(res) / 2
+        return self.center
 
-    def finish_frame():
-        scene = Window.scene
+    def finish_frame(self):
+        scene = self.scene
         # rendering
-        Window.clear()
+        self.clear()
         if scene is not None:
-            scene.step_and_draw(Window.surface)
+            scene.step_and_draw(self.surface)
 
-        for obj in Window.objects:
+        for obj in self.objects:
             if obj.active:
-                obj.step(Window.t)
-                obj.draw(Window.surface)
+                obj.step(self.t)
+                obj.draw(self.surface)
 
-        Window.post()
+        self.post()
         pg.display.flip()
-        Window.clock.tick(Window.fps)
+        self.clock.tick(self.fps)
 
         # handling stuff
-        Window.t += Window.dt
+        self.t += self.dt
         if scene is not None:
-            scene.t += Window.dt
+            scene.t += self.dt
 
         Input.step()
         for ev in pg.event.get():
-            func = Window.event_map.get(ev.type)
+            func = self.event_map.get(ev.type)
             if func is not None:
                 if func(ev):
                     # event handled by Window, don't pass through to scene
@@ -194,13 +191,13 @@ class Window(Container):
             if func is not None:
                 func(ev)
 
-    def event_handler(arg, _nowarn=False):
+    def event_handler(self, arg, _nowarn=False):
         # a decorator-ish way to define an event handler
         if type(arg) is int:
             # @event_handler(pg.EVENT_TYPE) / def func(...)
             ev_type = arg
             def _adder(func):
-                Window.add_event_handler({ev_type: func}, _nowarn=_nowarn)
+                self.add_event_handler({ev_type: func}, _nowarn=_nowarn)
                 return func
             return _adder
         # assuming @event_handler / def on_EVENT_TYPE(...)
@@ -208,12 +205,12 @@ class Window(Container):
         ev_type = _guess_event_type(func.__name__)
         # hopefully it's a valid event
         name = pg.event.event_name(ev_type)
-        print(f"@event_handler: guessed {func.__name__} to be {name} ({ev_type})")
-        Window.add_event_handler({ev_type: func}, _nowarn=_nowarn)
+        #print(f"@event_handler: guessed {func.__name__} to be {name} ({ev_type})")
+        self.add_event_handler({ev_type: func}, _nowarn=_nowarn)
         return func
 
-    def add_event_handler(new_map, _nowarn=False):
-        Window.event_map.update(new_map)
+    def add_event_handler(self, new_map, _nowarn=False):
+        self.event_map.update(new_map)
         if pg.QUIT in new_map and not _nowarn:
             msg = """
 [WARN] QUIT event has been overwritten, which might result in an unclosable window.
@@ -223,12 +220,13 @@ Add _nowarn=True parameter to remove this warning
             print(msg)
 
     # utility functions that can be overwritten to create special effects
-    def clear(): # runs before the frame is drawn
-        Window.surface.fill("black")
+    def clear(self): # runs before the frame is drawn
+        self.surface.fill("black")
 
-    def post(): # runs after the frame is drawn, unused by default
+    def post(self): # runs after the frame is drawn, unused by default
         pass
 
+Window = _WindowClass()
 Window.event_map[pg.QUIT] = Window.close # default
 
 
@@ -273,7 +271,7 @@ class Scene(Container):
         func = arg
         ev_type = _guess_event_type(func.__name__)
         name = pg.event.event_name(ev_type)
-        print(f"@event_handler: guessed {func.__name__} to be {name} ({ev_type})")
+        #print(f"@event_handler: guessed {func.__name__} to be {name} ({ev_type})")
         self.event_map[ev_type] = func
         return func
 
