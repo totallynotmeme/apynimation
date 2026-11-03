@@ -38,7 +38,7 @@ default_theme = Theme((0, 75, 150))
 class SceneUI(Scene):
     debug = False
 
-    def step_and_draw(self, target):
+    def step(self, t=0):
         current.hovering = None
         if Input.mouse_just_released[0]:
             current.holding = None
@@ -59,7 +59,10 @@ class SceneUI(Scene):
                 self.objects.append(i)
             break
 
-        super().step_and_draw(target)
+        super().step(t)
+
+    def draw(self, target):
+        super().draw(target)
         if self.debug:
             if current.hovering:
                 pg.draw.rect(target, "yellow", current.hovering.rect, 3)
