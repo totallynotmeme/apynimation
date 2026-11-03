@@ -73,6 +73,8 @@ class Container:
     # object capable of containing steppable and drawable objects
     def __init__(self):
         self.objects = []
+        self.logics = [] # only step()-able objects
+        self.overlays = [] # only draw()-able objects
 
     def __repr__(self):
         return f"<{self.__class__.__name__} {len(self.objects)} objects>"
@@ -81,14 +83,29 @@ class Container:
         for obj in self.objects:
             if obj.active:
                 obj.step(t)
+        # only steppable objects
+        for obj in self.logics:
+            if obj.active:
+                obj.step(t)
 
     def draw(self, target):
         for obj in self.objects:
             if obj.active:
                 obj.draw(target)
+        # only drawable objects
+        for obj in self.overlays:
+            if obj.active:
+                obj.draw(target)
 
-    def add(self, *objects):
-        self.objects.extend(objects)
+    def add(self, *objects, logic=False, overlay=False):
+        if logic:
+            target_list = self.logics
+        elif overlay:
+            target_list = self.overlays
+        else:
+            target_list = self.objects
+        target_list.extend(objects)
+
         if len(objects) == 1:
             return objects[0]
         return objects
@@ -97,6 +114,17 @@ class Container:
         for obj in objects:
             if obj in self.objects:
                 self.objects.remove(obj)
+            elif obj in self.logics:
+                self.logics.remove(obj)
+            elif obj in self.overlays:
+                self.overlays.remove(obj)
+
+    # aliases for add()
+    def add_logic(self, *objects):
+        return self.add(*objects, logic=True)
+
+    def add_overlay(self, *objects):
+        return self.add(*objects, overlay=True)
 
 
 class Drawable:
@@ -122,6 +150,8 @@ class _WindowClass(Container):
 
         self.scene = None
         self.event_map = {}
+        self.stepped = False
+        self.drawn = False
 
         self.res = (640, 480) # default
         self.center = pg.Vector2(self.res) / 2
@@ -155,28 +185,44 @@ class _WindowClass(Container):
         self.center = pg.Vector2(res) / 2
         return self.center
 
+    def step(self, t=None):
+        if t is None:
+            t = Window.t
+
+        if self.scene:
+            self.scene.step(Window.t)
+        super().step(t)
+        self.stepped = True
+
+    def draw(self, target=None):
+        do_processing = target is None
+        if do_processing:
+            target = Window.surface
+            self.clear()
+
+        if self.scene:
+            self.scene.draw(target)
+        super().draw(target)
+
+        if do_processing:
+            self.post()
+        self.drawn = True
+
     def finish_frame(self):
-        scene = self.scene
-        # rendering
-        self.clear()
-        if scene is not None:
-            scene.step_and_draw(self.surface)
+        if not self.stepped:
+            self.step()
+        if not self.drawn:
+            self.draw()
 
-        for obj in self.objects:
-            if obj.active:
-                obj.step(self.t)
-                obj.draw(self.surface)
-
-        self.post()
         pg.display.flip()
         self.clock.tick(self.fps)
+        self.stepped = False
+        self.drawn = False
 
         # handling stuff
         self.t += self.dt
-        if scene is not None:
-            scene.t += self.dt
-
         Input.step()
+
         for ev in pg.event.get():
             func = self.event_map.get(ev.type)
             if func is not None:
@@ -185,9 +231,9 @@ class _WindowClass(Container):
                     continue
 
             # pass event to Scene if it's set
-            if scene is None:
+            if self.scene is None:
                 continue
-            func = scene.event_map.get(ev.type, scene.global_handler)
+            func = self.scene.event_map.get(ev.type, self.scene.global_handler)
             if func is not None:
                 func(ev)
 
@@ -235,23 +281,24 @@ class Scene(Container):
     global_handler = None # default
 
     def __init__(self):
-        self.t = 0
+        super().__init__()
         self.layers = []
-        self.objects = []
         self.event_map = {}
 
     def __repr__(self):
         return f"<{self.__class__.__name__} {len(self.layers)} layers>"
 
-    def step_and_draw(self, target):
+    def step(self, t=0):
         for layer in self.layers:
             if layer.active:
-                layer.step(self.t)
-                layer.draw(target)
+                layer.step(t)
+        super().step(t)
 
-        if self.objects:
-            super().step(self.t)
-            super().draw(target)
+    def draw(self, target):
+        for layer in self.layers:
+            if layer.active:
+                layer.draw(target)
+        super().draw(target)
 
     def create_layer(self, *args, **kwargs):
         a = Layer(*args, **kwargs)
@@ -285,7 +332,7 @@ class Layer(Container):
     DISABLE_BUFFER = False
 
     def __init__(self, _surface_flags=pg.SRCALPHA):
-        self.objects = []
+        super().__init__()
         self.surf = pg.Surface(Window.res, _surface_flags)
 
     def draw(self, target):

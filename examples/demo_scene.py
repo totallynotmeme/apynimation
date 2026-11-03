@@ -107,11 +107,11 @@ while Window.is_open:
     for i in cube_points:
         i.pos3d.rotate_y_ip(60 * dt)
 
-    cube_camera.pos.y -= sin(main.t) * 42 * dt
+    cube_camera.pos.y -= sin(Window.t) * 42 * dt
 
     # ground 1/2
     for i in ground_points:
-        i.pos3d.y += sin(i.pos3d.x + i.pos3d.z + main.t * 3) * 10 * dt
+        i.pos3d.y += sin(i.pos3d.x + i.pos3d.z + Window.t * 3) * 10 * dt
 
     # ground 2/2 - moving the camera forward and snapping it back when needed
     ground_camera.pos.z += 30 * dt
@@ -134,7 +134,7 @@ while Window.is_open:
     if sun_ticker.step():
         sun_ngon.angle += 17
         for ind, i in enumerate(sun_rays):
-            line_angle = ind * sun_angle_step + sun_angle - main.t*30
+            line_angle = ind * sun_angle_step + sun_angle - Window.t*30
             pos1 = sun_point + pg.Vector2(0, -40).rotate(line_angle)
             pos2 = sun_point + pg.Vector2(0, -50).rotate(line_angle)
             i.p1.update(pos1)
