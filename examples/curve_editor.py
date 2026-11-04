@@ -65,7 +65,7 @@ class CurvePoint(Point):
         self.where = where
         self.val = val
         self.pulse_t = 999
-        self.dragging = False
+        self.color = "white"
         self.x = self.where * Viewport.w
         self.y = (1-self.val) * Viewport.h
 
@@ -79,13 +79,13 @@ class CurvePoint(Point):
             self.val = 1 - self.y / Viewport.h
 
     def draw(self, target):
-        pg.draw.circle(target, "white", self, 20, 1)
-        pg.draw.circle(target, "white", self, 5)
+        pg.draw.circle(target, self.color, self, 20, 1)
+        pg.draw.circle(target, self.color, self, 5)
         # pulse on release
         if self.pulse_t < 50/3:
             radius = 15 * self.pulse_t ** 0.5
             width = int(50/3 - self.pulse_t + 1)
-            pg.draw.circle(target, "white", self, radius, width)
+            pg.draw.circle(target, self.color, self, radius, width)
 
     def collidepoint(self, point):
         return self.distance_to(point) < 20
@@ -110,8 +110,17 @@ curve = logic.Curve(curve_points)
 
 def refresh_points():
     curve_points.clear()
+    seen = set()
     for i in visual_points:
-        i.bake_point()
+        # flag point collisions
+        # TODO:? probably handle this better
+        if i.where in seen:
+            i.color = "red"
+        else:
+            i.color = "white"
+            seen.add(i.where)
+            # commit to curve_points
+            i.bake_point()
     curve.update_points()
     wireframe.points.sort(key=lambda point: point.x)
 
@@ -257,7 +266,7 @@ while Window.is_open:
     if export_button.collidepoint(Input.mouse_pos):
         export_button.color = (60, 60, 20)
         if Input.mouse_just_pressed[0]: # left
-            print("my_curve = Curve([")
+            print("my_curve = Curve({")
             x_ratio = (Viewport.x_to - Viewport.x_from)
             y_ratio = (Viewport.y_to - Viewport.y_from)
             x_offset = Viewport.x_from
@@ -265,8 +274,8 @@ while Window.is_open:
             for key, val in curve_points.items():
                 x = key * x_ratio + x_offset
                 y = val * y_ratio + y_offset
-                print(f"    Point({x}, {y}),")
-            print("])")
+                print(f"    {x}: {y},")
+            print("})")
             export_label.text = "Exported to console!"
     else:
         export_button.color = (40, 40, 40)
