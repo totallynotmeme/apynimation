@@ -1,5 +1,5 @@
 from apynimation import *
-from apynimation import logic, ui, three_d
+from apynimation import logic, ui, three_d, animate
 import random
 
 
@@ -225,6 +225,9 @@ ngons = [
 for i in ngons:
     other_demo.add(i)
     i.original_sides = i.sides # storing the original sides count
+    # animate sides
+    i.animator = animate.Towards(i, "sides", speed=10)
+    other_demo.add(i.animator, logic=True)
 
 
 # switching scenes with Tab
@@ -271,8 +274,8 @@ while Window.is_open:
         # slow down when hovered
         if i.collidepoint(Input.mouse_pos):
             i.angle -= spin / 2
-            i.sides = lerp(i.sides, i.original_sides-2, dt*10)
+            i.animator.goal = i.original_sides-2
         else:
-            i.sides = lerp(i.sides, i.original_sides, dt*10)
+            i.animator.goal = i.original_sides
 
     Window.finish_frame()

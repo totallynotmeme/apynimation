@@ -7,6 +7,8 @@ from . import Window, lerp
 
 
 class Driver:
+    active = True
+
     def __init__(self, obj, prop, val=None):
         self.obj = obj
         self.prop = prop
@@ -23,13 +25,11 @@ class Driver:
 
 
 class Towards(Driver):
-    def __init__(self, *args, factor=None, **kwargs):
+    def __init__(self, *args, speed=5, **kwargs):
         # factor is PER FRAME. by default it uses Window.dt,
         # resulting in moving about ~63% towards goal per second
         super().__init__(*args, **kwargs)
-        if factor is None:
-            factor = Window.dt
-        self.factor = factor
+        self.factor = speed * Window.dt
         self.goal = self.val # set by external script
 
     def _move(self):
