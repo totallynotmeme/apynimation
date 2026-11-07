@@ -300,7 +300,7 @@ while Window.is_open:
     left_edge.x = Window.res[0] - time_unit * 2 * Window.fps
 
     # curve value history
-    factor = min(max(100 - y*100, 0), 100)
+    factor = clamp(100 - y*100, 0, 100)
     color.hsva = (200, 100, factor, 100)
     # evil hack to shift the trail surface left
     pg.draw.rect(trail.surface, color, (Window.res[0]-2, 0, 5, 20))

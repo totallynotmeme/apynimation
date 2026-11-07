@@ -90,7 +90,7 @@ while Window.is_open:
 
     camera.pos += motion_dir * speed * Window.dt
     camera.rot += rotation_dir * rot_speed * Window.dt
-    camera.rot.y = min(max(camera.rot.y, -89), 89)
+    camera.rot.y = clamp(camera.rot.y, -89, 89)
 
     # updating the ui
     rot_marker.x = (camera.rot.x + 180) % 360 - 180

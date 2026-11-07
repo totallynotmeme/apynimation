@@ -109,7 +109,7 @@ nodes.add(base_node)
 
 def scroll_handler(ev):
     Camera.zoom *= 1.1 ** ev.y
-    Camera.zoom = min(max(Camera.zoom, 0.01), 2)
+    Camera.zoom = clamp(Camera.zoom, 0.01, 2)
 
 def key_handler(ev):
     if ev.key == pg.K_TAB:

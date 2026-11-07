@@ -10,6 +10,7 @@ from math import ceil
 # helper functions / aliases to existing functions for easier access
 # ceil - imported above
 lerp = pg.math.lerp
+clamp = pg.math.clamp
 
 # for @event_handler decorators
 def _guess_event_type(name):
