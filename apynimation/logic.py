@@ -274,3 +274,34 @@ class Trail:
 
     def clear(self):
         self.items.clear()
+
+
+class Pulse:
+    """
+    [[placeholder docstring]]
+    a class to keep track of state changes easily
+
+    example usage:
+    pulse = Pulse(True) # optional default value in brackets
+    while Window.is_open:
+        if pulse.update(Window.focused): # .focused doesn't exist yet lol
+            # state just toggled
+            if Window.focused:
+                print("Just regained focus")
+            else:
+                print("Focus was just lost")
+            ...
+        Window.finish_frame()
+    """
+
+    def __init__(self, default=...):
+        self.val = default
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__} ({self.val})>"
+
+    def update(self, val):
+        if self.val == val:
+            return False
+        self.val = val
+        return True

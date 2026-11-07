@@ -226,11 +226,13 @@ ngons = [
     CircleNgon(center_point, r=150, width=5, sides=7),
     CircleNgon(center_point, r=200, width=2, sides=8, color=(0, 127, 255)),
 ]
-for i in ngons:
-    other_demo.add(i)
-    i.original_sides = i.sides # storing the original sides count
+for circle in ngons:
+    other_demo.add(circle)
+    circle.original_sides = circle.sides # storing the original sides count
     # animate sides
-    anim.hook(i, "sides", animate.Towards, speed=10)
+    anim.hook(circle, "sides", animate.Towards, speed=10)
+    # create state tracker
+    circle.pulse = logic.Pulse()
 
 
 # switching scenes with Tab
@@ -270,15 +272,17 @@ while Window.is_open:
     layers_text_l1.pos.update(300, layers_text_pos.y + 400)
     layers_text_l2.pos.update(900, layers_text_pos.x + 400)
 
-    # rotating the n-gon circles
-    for i in ngons:
-        spin = (i.original_sides - 6.5) * 45 * dt
-        i.angle += spin
+    # updating the n-gon circles
+    for circle in ngons:
         # slow down when hovered
-        if i.collidepoint(Input.mouse_pos):
-            i.angle -= spin / 2
-            i.sides = i.original_sides-2
-        else:
-            i.sides = i.original_sides
+        hovering = circle.collidepoint(Input.mouse_pos)
+        if circle.pulse.update(hovering): # only run on state change
+            circle.spin = (circle.original_sides - 6.5) * 45 * dt
+            if hovering:
+                circle.spin /= 2
+                circle.sides = circle.original_sides-2
+            else:
+                circle.sides = circle.original_sides
+        circle.angle += circle.spin
 
     Window.finish_frame()
