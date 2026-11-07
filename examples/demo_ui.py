@@ -214,6 +214,10 @@ ui_demo.add(
 other_demo = Scene()
 Window.add(Scene_button("Other", other_demo))
 
+# create an animator for sides of n-gons
+anim = animate.Animator()
+other_demo.add(anim, logic=True) # only .step(), don't .draw()
+
 center_point = Point(Window.res)
 center_point /= 2
 ngons = [
@@ -226,8 +230,7 @@ for i in ngons:
     other_demo.add(i)
     i.original_sides = i.sides # storing the original sides count
     # animate sides
-    i.animator = animate.Towards(i, "sides", speed=10)
-    other_demo.add(i.animator, logic=True)
+    anim.hook(i, "sides", animate.Towards, speed=10)
 
 
 # switching scenes with Tab
@@ -274,8 +277,8 @@ while Window.is_open:
         # slow down when hovered
         if i.collidepoint(Input.mouse_pos):
             i.angle -= spin / 2
-            i.animator.goal = i.original_sides-2
+            i.sides = i.original_sides-2
         else:
-            i.animator.goal = i.original_sides
+            i.sides = i.original_sides
 
     Window.finish_frame()
