@@ -13,11 +13,11 @@ class Animator:
         if _hooked is not None:
             self.hooked = _hooked
             return
-        self.hooked = {} # (obj, prop): driver,
+        self.hooked = [] # (obj, prop, driver),
 
     def step(self, t=0):
-        for key, driver in self.hooked.items():
-            val = getattr(*key)
+        for obj, prop, driver in self.hooked:
+            val = getattr(obj, prop)
             if val != driver.val:
                 # value was changed, update the goal
                 driver.prev = driver.val
@@ -25,14 +25,13 @@ class Animator:
                 driver.last_t = t
             anim_t = t - driver.last_t
             driver.step(anim_t)
-            setattr(*key, driver.val)
+            setattr(obj, prop, driver.val)
 
     def hook(self, obj, prop, driver, *args, **kwargs):
-        key = (obj, prop)
         a = driver(*args, **kwargs)
-        self.hooked[key] = a
+        self.hooked.append((obj, prop, a))
         # set default
-        val = getattr(*key)
+        val = getattr(obj, prop)
         a.prev = val
         a.goal = val
         a.val = val
@@ -69,3 +68,14 @@ class TowardsLerp(Towards):
 
     def step(self, anim_t):
         self.val = self.val.lerp(self.goal, self.speed * Window.dt)
+
+
+class Linear(Driver):
+    def __init__(self, time=1):
+        # time in seconds to reach the goal
+        super().__init__()
+        self.time = time
+
+    def step(self, anim_t):
+        t = clamp(anim_t / self.time, 0, 1)
+        self.val = lerp(self.prev, self.goal, t)
