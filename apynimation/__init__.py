@@ -81,11 +81,12 @@ class Container:
         return f"<{self.__class__.__name__} {len(self.objects)} objects>"
 
     def step(self, t=0):
-        for obj in self.objects:
-            if obj.active:
-                obj.step(t)
         # only steppable objects
         for obj in self.logics:
+            if obj.active:
+                obj.step(t)
+        # everything else
+        for obj in self.objects:
             if obj.active:
                 obj.step(t)
 
@@ -190,22 +191,24 @@ class _WindowClass(Container):
         if t is None:
             t = Window.t
 
+        # processing: Window then Scene
+        super().step(t)
         if self.scene:
             self.scene.step(Window.t)
-        super().step(t)
         self.stepped = True
 
     def draw(self, target=None):
-        do_processing = target is None
-        if do_processing:
+        is_on_window = target is None
+        if is_on_window:
             target = Window.surface
             self.clear()
 
+        # drawing: Scene then Window
         if self.scene:
             self.scene.draw(target)
         super().draw(target)
 
-        if do_processing:
+        if is_on_window:
             self.post()
         self.drawn = True
 
