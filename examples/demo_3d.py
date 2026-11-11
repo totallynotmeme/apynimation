@@ -19,11 +19,12 @@ Window.create("Demo scene")
 world = Scene()
 Window.scene = world
 camera = Camera3d.default
+camera.focal_length = 500
 
 
 donut_points = []
 # forming a donut with a bunch of circles
-#"""
+"""
 b = None
 inner_up = pg.Vector2(10, 0) # r(small) of the torus / donut
 for angle_x in range(0, 360, 360 // 15):
@@ -37,13 +38,37 @@ for angle_x in range(0, 360, 360 // 15):
         b = a
         donut_points.append(a)
 #world.add(Wireframe(donut_points, closed=True))
-"""
-a = Point3d(0, 0, 0)
-b = Point3d(10, 10, 10)
-c = Point3d(-5, 9, 11)
-world.add(Line3d(a, b))
-world.add(Line3d(b, c))
-"""
+#"""
+# Triangle3d.check_normal = False
+hue = 0
+color = pg.Color(0)
+up = pg.Vector3(0, 10, 0)
+tris = world.add(Container3d())
+points = []
+prev_row = []
+for i in range(0, 360+1, 36):
+    this_row = []
+    for j in range(15, 180, 30):
+        x, y, z = up.rotate_z(j).rotate_y(i)
+        this_row.append(Point3d(x, y, z))
+    if prev_row:
+        for i in range(len(this_row) - 1): # instead of zip(a, b, c, d)
+            p1 = prev_row[i]
+            p2 = prev_row[i+1]
+            p3 = this_row[i]
+            p4 = this_row[i+1]
+            color.hsva = (hue, 50, 100, 100)
+            #world.add(Line3d(p1, p4, color=pg.Color(color)))
+            tris.add(Triangle3d((p1, p4, p2), color=pg.Color(color)))
+            hue = (hue+17) % 360
+            color.hsva = (hue, 50, 100, 100)
+            #world.add(Line3d(p2, p3, color=pg.Color(color)))
+            tris.add(Triangle3d((p1, p3, p4), color=pg.Color(color)))
+            hue = (hue+17) % 360
+    prev_row = this_row
+    points.extend(this_row)
+#"""
+camera.pos.z = -50
 
 # rotation markers
 rot_marker = Point()
@@ -102,11 +127,17 @@ while Window.is_open:
     marker_y.p1.y = rot_marker.y
     marker_y.p2.y = rot_marker.y
 
+    """
     # spinning the donut
     if spin_donut:
         for i in donut_points:
             i.pos3d.rotate_x_ip(60 * Window.dt)
             i.pos3d.rotate_z_ip(60 * Window.dt)
+    #"""
+    if spin_donut: # not really donut here guh
+        for i in points:
+            i.pos3d.rotate_y_ip(60 * Window.dt)
+    #"""
 
     Window.finish_frame()
 

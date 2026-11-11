@@ -2,7 +2,7 @@
 # handles most graphics and logic in 3D space
 # v0.0.0-indev  /  use current commit as the version
 
-from . import Window, Point, Line
+from . import Window, Point, Line, Polygon
 from pygame import Vector3
 import pygame as pg
 
@@ -45,7 +45,7 @@ class Point3d(Point):
             self._local3d.rotate_z_ip(self.camera.rot.z)
 
         # check if we can project the point
-        if self._local3d.z <= 0:
+        if self._local3d.z <= 0.1:
             self.valid = False
             return
 
@@ -76,39 +76,75 @@ class Camera3d:
 Camera3d.default = Camera3d()
 
 
+# TODO: possibly make this a subclass of Container?
+class Container3d:
+    active = True # default
+
+    def __init__(self):
+        self.objects = []
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__} {len(self.objects)} objects>"
+
+    def step(self, t=0):
+        for i in self.objects:
+            i.step(t)
+        # sorting by z-depth
+        self.objects.sort(key=lambda x: x._get_z_depth(), reverse=True)
+
+    def draw(self, target):
+        for i in self.objects:
+            i.draw(target)
+
+    def add(self, *objects):
+        self.objects.extend(objects)
+        if len(objects) == 1:
+            return objects[0]
+        return objects
+
+    def remove(self, *objects):
+        for obj in objects:
+            if obj in self.objects:
+                self.objects.remove(obj)
+
+
 class Line3d(Line):
     split_point = pg.Vector2() # used to split the projected line
 
-    def draw(self, target):
-        if not self.p1.valid and not self.p2.valid:
+    def draw(self, target, _points=None):
+        if _points is None:
+            p1 = self.p1
+            p2 = self.p2
+        else:
+            p1, p2 = _points
+        if not p1.valid and not p2.valid:
             # line is completely off-screen
             return
-        if self.p1.valid and self.p2.valid:
+        if p1.valid and p2.valid:
             # line is fully on-screen
-            pg.draw.line(target, self.color, self.p1, self.p2, self.width)
-            super().draw(target)
+            pg.draw.line(target, self.color, p1, p2, self.width)
             return
         # line is partially on-screen
         # https://stackoverflow.com/questions/5666222/3d-line-plane-intersection
         # using p1 as projection camera (assuming p1.camera == p2.camera)
-        camera = self.p1.camera
+        camera = p1.camera
         normal = (0, 0, 1) # we're already in camera-space
 
-        direction = self.p2._local3d - self.p1._local3d
+        direction = p2._local3d - p1._local3d
         dot = direction.dot(normal)
         if abs(dot) < 0.01:
             # The segment is parallel to plane.
             return
 
-        fac = -self.p1._local3d.dot(normal) / dot
+        fac = -p1._local3d.dot(normal) / dot
         if fac < 0 or fac > 1:
             return
 
         # split_pos is (point) + direction * factor
-        if self.p1.valid:
-            point = self.p1
-        else: # self.p2 has to be valid
-            point = self.p2
+        if p1.valid:
+            point = p1
+        else: # p2 has to be valid
+            point = p2
             fac = fac - 1
 
         split_pos = point._local3d + direction * fac
@@ -116,3 +152,40 @@ class Line3d(Line):
         _project(split_pos, Line3d.split_point, camera.focal_length)
 
         pg.draw.line(target, self.color, point, Line3d.split_point, self.width)
+
+
+class Triangle3d(Polygon):
+    check_normal = True # default
+    normal_point = pg.Vector2() # temp
+
+    def draw(self, target, _points=None):
+        p1, p2, p3 = _points or self.points
+        valid_count = p1.valid + p2.valid + p3.valid
+        if valid_count == 0:
+            # triangle not on screen at all
+            return
+
+        if self.check_normal:
+            # check to not draw the back face
+            a = p2 - p1
+            b = (p3 - p2).rotate(90)
+            if a.dot(b) >= 0:
+                # triangle facing the wrong way
+                return
+
+        if valid_count == 3:
+            # triangle is fully on screen
+            pg.draw.polygon(target, self.color, self.points, self.width)
+            return
+
+        if p1.valid:
+            p1.draw(target)
+        if p2.valid:
+            p2.draw(target)
+        if p3.valid:
+            p3.draw(target)
+
+    def _get_z_depth(self):
+        return (self.points[0]._local3d.z \
+              + self.points[1]._local3d.z \
+              + self.points[2]._local3d.z) / 3
