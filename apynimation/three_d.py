@@ -111,47 +111,52 @@ class Container3d:
 class Line3d(Line):
     split_point = pg.Vector2() # used to split the projected line
 
-    def draw(self, target, _points=None):
-        if _points is None:
-            p1 = self.p1
-            p2 = self.p2
-        else:
-            p1, p2 = _points
-        if not p1.valid and not p2.valid:
+    def draw(self, target):
+        if not self.p1.valid and not self.p2.valid:
             # line is completely off-screen
             return
-        if p1.valid and p2.valid:
+        if self.p1.valid and self.p2.valid:
             # line is fully on-screen
-            pg.draw.line(target, self.color, p1, p2, self.width)
+            clipped = Window.rect.clipline(self.p1, self.p2)
+            if not clipped:
+                # actually it's not on screen
+                #pg.draw.line(target, "red", self.p1, self.p2, 5)
+                return
+            pg.draw.line(target, self.color, *clipped, self.width)
             return
         # line is partially on-screen
         # https://stackoverflow.com/questions/5666222/3d-line-plane-intersection
         # using p1 as projection camera (assuming p1.camera == p2.camera)
-        camera = p1.camera
+        camera = self.p1.camera
         normal = (0, 0, 1) # we're already in camera-space
 
-        direction = p2._local3d - p1._local3d
+        direction = self.p2._local3d - self.p1._local3d
         dot = direction.dot(normal)
         if abs(dot) < 0.01:
             # The segment is parallel to plane.
             return
 
-        fac = -p1._local3d.dot(normal) / dot
+        fac = -self.p1._local3d.dot(normal) / dot
         if fac < 0 or fac > 1:
             return
 
         # split_pos is (point) + direction * factor
-        if p1.valid:
-            point = p1
+        if self.p1.valid:
+            point = self.p1
         else: # p2 has to be valid
-            point = p2
+            point = self.p2
             fac = fac - 1
 
         split_pos = point._local3d + direction * fac
         split_pos.z += 0.01 # near clipping distance
         _project(split_pos, Line3d.split_point, camera.focal_length)
 
-        pg.draw.line(target, self.color, point, Line3d.split_point, self.width)
+        clipped = Window.rect.clipline(point, Line3d.split_point)
+        if not clipped:
+            # line isn't even on screen and we did this for nothing
+            #pg.draw.line(target, "green", point, Line3d.split_point, 5)
+            return
+        pg.draw.line(target, self.color, *clipped, self.width)
 
 
 class Triangle3d(Polygon):
@@ -178,6 +183,7 @@ class Triangle3d(Polygon):
             pg.draw.polygon(target, self.color, self.points, self.width)
             return
 
+        # TODO: clipping the triangle
         if p1.valid:
             p1.draw(target)
         if p2.valid:

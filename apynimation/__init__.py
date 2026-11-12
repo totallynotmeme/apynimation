@@ -157,6 +157,7 @@ class _WindowClass(Container):
 
         self.res = (640, 480) # default
         self.center = pg.Vector2(self.res) / 2
+        self.rect = pg.Rect((0, 0), self.res)
         self.fps = 60 # default
         self.dt = 1/60
         self.t = 0
@@ -184,6 +185,7 @@ class _WindowClass(Container):
 
     def set_res(self, res):
         self.res = res
+        self.rect.update(0, 0, *res)
         self.center = pg.Vector2(res) / 2
         return self.center
 

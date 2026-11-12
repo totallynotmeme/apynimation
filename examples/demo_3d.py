@@ -22,9 +22,11 @@ camera = Camera3d.default
 camera.focal_length = 500
 
 
-donut_points = []
-# forming a donut with a bunch of circles
+points = []
+# uncomment the line below to see line clipping in action
+# Window.rect.update(200, 100, Window.res[0]-400, Window.res[1]-200)
 """
+# forming a donut with a bunch of circles
 b = None
 inner_up = pg.Vector2(10, 0) # r(small) of the torus / donut
 for angle_x in range(0, 360, 360 // 15):
@@ -36,8 +38,8 @@ for angle_x in range(0, 360, 360 // 15):
         if b is not None:
             world.add(Line3d(a, b))
         b = a
-        donut_points.append(a)
-#world.add(Wireframe(donut_points, closed=True))
+        points.append(a)
+#world.add(Wireframe(points, closed=True))
 #"""
 # Triangle3d.check_normal = False
 hue = 0
@@ -60,13 +62,21 @@ for i in range(0, 360+1, 36):
             color.hsva = (hue, 50, 100, 100)
             #world.add(Line3d(p1, p4, color=pg.Color(color)))
             tris.add(Triangle3d((p1, p4, p2), color=pg.Color(color)))
+            # tris.add(Triangle3d((p1, p4, p2), color="black", width=3))
             hue = (hue+17) % 360
             color.hsva = (hue, 50, 100, 100)
             #world.add(Line3d(p2, p3, color=pg.Color(color)))
             tris.add(Triangle3d((p1, p3, p4), color=pg.Color(color)))
+            # tris.add(Triangle3d((p1, p3, p4), color="black", width=3))
             hue = (hue+17) % 360
     prev_row = this_row
     points.extend(this_row)
+"""
+points = []
+a = Point3d(0, 3, 10)
+b = Point3d(5, 4, 0)
+c = Point3d(10, 5, 12)
+world.add(Triangle3d((a, c, b), color="white"))
 #"""
 camera.pos.z = -50
 
