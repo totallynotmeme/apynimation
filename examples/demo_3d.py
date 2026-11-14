@@ -24,7 +24,8 @@ camera.focal_length = 500
 
 points = []
 # uncomment the line below to see line clipping in action
-# Window.rect.update(200, 100, Window.res[0]-400, Window.res[1]-200)
+Window.rect.update(200, 100, Window.res[0]-400, Window.res[1]-200)
+world.add(Rect(*Window.rect, width=1))
 """
 # forming a donut with a bunch of circles
 b = None
@@ -40,7 +41,7 @@ for angle_x in range(0, 360, 360 // 15):
         b = a
         points.append(a)
 #world.add(Wireframe(points, closed=True))
-#"""
+#"#""
 # Triangle3d.check_normal = False
 hue = 0
 color = pg.Color(0)
@@ -71,7 +72,7 @@ for i in range(0, 360+1, 36):
             hue = (hue+17) % 360
     prev_row = this_row
     points.extend(this_row)
-"""
+#"""
 points = []
 a = Point3d(0, 3, 10)
 b = Point3d(5, 4, 0)
@@ -79,6 +80,13 @@ c = Point3d(10, 5, 12)
 world.add(Triangle3d((a, c, b), color="white"))
 #"""
 camera.pos.z = -50
+
+world.add(Line3d(
+    Point3d(0, 0, -10),
+    Point3d(2, 3, -15),
+    width = 20,
+    color = "red",
+))
 
 # rotation markers
 rot_marker = Point()

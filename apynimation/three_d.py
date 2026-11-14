@@ -16,6 +16,35 @@ def _project(pos3d, target2d, focal_length):
     target2d += Window.center
 
 
+def _cut_line(p1, p2):
+    # https://stackoverflow.com/questions/5666222/3d-line-plane-intersection
+    # using p1 as projection camera (assuming p1.camera == p2.camera)
+    camera = p1.camera
+    normal = (0, 0, 1) # we're already in camera-space
+
+    direction = p2._local3d - p1._local3d
+    dot = direction.dot(normal)
+    if abs(dot) < 0.01:
+        # The segment is parallel to plane.
+        return None, None
+
+    fac = -p1._local3d.dot(normal) / dot
+    # surely we'll be fine without this check
+    # if fac < 0 or fac > 1:
+    #     return None, None
+
+    # split_pos is (point) + direction * factor
+    if p1.valid:
+        line_point = p1
+    else: # p2 has to be valid
+        line_point = p2
+        fac = fac - 1
+
+    split_pos = line_point._local3d + direction * fac
+    split_pos.z += 0.01 # near clipping distance
+    return split_pos, line_point
+
+
 class Point3d(Point):
     def __init__(self, *args, camera=None):
         self.pos3d = Vector3(*args)
@@ -125,43 +154,25 @@ class Line3d(Line):
             pg.draw.line(target, self.color, *clipped, self.width)
             return
         # line is partially on-screen
-        # https://stackoverflow.com/questions/5666222/3d-line-plane-intersection
-        # using p1 as projection camera (assuming p1.camera == p2.camera)
-        camera = self.p1.camera
-        normal = (0, 0, 1) # we're already in camera-space
-
-        direction = self.p2._local3d - self.p1._local3d
-        dot = direction.dot(normal)
-        if abs(dot) < 0.01:
-            # The segment is parallel to plane.
+        split_pos, line_point = _cut_line(self.p1, self.p2)
+        if split_pos is None:
             return
 
-        fac = -self.p1._local3d.dot(normal) / dot
-        if fac < 0 or fac > 1:
-            return
+        _project(split_pos, Line3d.split_point, self.p1.camera.focal_length)
 
-        # split_pos is (point) + direction * factor
-        if self.p1.valid:
-            point = self.p1
-        else: # p2 has to be valid
-            point = self.p2
-            fac = fac - 1
-
-        split_pos = point._local3d + direction * fac
-        split_pos.z += 0.01 # near clipping distance
-        _project(split_pos, Line3d.split_point, camera.focal_length)
-
-        clipped = Window.rect.clipline(point, Line3d.split_point)
+        clipped = Window.rect.clipline(line_point, Line3d.split_point)
         if not clipped:
             # line isn't even on screen and we did this for nothing
-            #pg.draw.line(target, "green", point, Line3d.split_point, 5)
+            #pg.draw.line(target, "green", line_point, Line3d.split_point, 5)
             return
         pg.draw.line(target, self.color, *clipped, self.width)
 
 
 class Triangle3d(Polygon):
     check_normal = True # default
-    normal_point = pg.Vector2() # temp
+    normal_point = pg.Vector3() # temp
+    cut_point_a = pg.Vector2()
+    cut_point_b = pg.Vector2()
 
     def draw(self, target, _points=None):
         p1, p2, p3 = _points or self.points
@@ -172,9 +183,10 @@ class Triangle3d(Polygon):
 
         if self.check_normal:
             # check to not draw the back face
-            a = p2 - p1
-            b = (p3 - p2).rotate(90)
-            if a.dot(b) >= 0:
+            a = p2._local3d - p1._local3d
+            b = p3._local3d - p1._local3d
+            normal = a.cross(b)
+            if normal.dot(-p1._local3d) >= 0:
                 # triangle facing the wrong way
                 return
 
@@ -183,13 +195,45 @@ class Triangle3d(Polygon):
             pg.draw.polygon(target, self.color, self.points, self.width)
             return
 
-        # TODO: clipping the triangle
-        if p1.valid:
-            p1.draw(target)
-        if p2.valid:
-            p2.draw(target)
-        if p3.valid:
-            p3.draw(target)
+        # triangle needs to be clipped
+        if valid_count == 1:
+            # mapping A to be the valid point
+            if p1.valid:
+                a, b, c = p1, p2, p3
+            elif p2.valid:
+                a, b, c = p2, p1, p3
+            else: # p3 has to be valid
+                a, b, c = p3, p1, p2
+
+            points = (a, Triangle3d.cut_point_a, Triangle3d.cut_point_b)
+            color = "green"
+        else: # has to be 2:
+            # mapping A to be INvalid
+            if not p1.valid:
+                a, b, c = p1, p2, p3
+            elif not p2.valid:
+                a, b, c = p2, p1, p3
+            else: # p3 has to be invalid
+                a, b, c = p3, p1, p2
+
+            points = (b, Triangle3d.cut_point_a, Triangle3d.cut_point_b, c)
+            color = "yellow"
+
+        # clipping (same for both)
+        b1, _ = _cut_line(b, a)
+        # if b1 is None:
+        #     pg.draw.polygon(target, "red", self.points, 5)
+        #     return
+        _project(b1, Triangle3d.cut_point_a, a.camera.focal_length)
+
+        c1, _ = _cut_line(c, a)
+        # if c1 is None:
+        #     pg.draw.polygon(target, "yellow", self.points, 5)
+        #     return
+        _project(c1, Triangle3d.cut_point_b, a.camera.focal_length)
+
+        # pg.draw.polygon(target, color, points, self.width)
+        pg.draw.polygon(target, self.color, points, self.width)
 
     def _get_z_depth(self):
         return (self.points[0]._local3d.z \
