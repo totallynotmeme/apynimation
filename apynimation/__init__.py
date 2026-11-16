@@ -26,6 +26,14 @@ Failed to guess event handler type. Please specify the event type with \
 """[1:-1])
     return ev_type
 
+# adding an object from class, useful when you're writing your own objects.
+# intended to replace `class Thing: ... ; thing = Thing(); scene.add(thing)`
+def add_to(container, logic=False, overlay=False):
+    def _wrapper(obj_class):
+        obj = obj_class()
+        container.add(obj, logic=logic, overlay=overlay)
+        return obj
+    return _wrapper
 
 
 # user inputs
@@ -137,6 +145,11 @@ class Drawable:
 
     def draw(self, target):
         return NotImplemented
+
+    # decorator way to re-define an object function
+    def function(self, func):
+        setattr(self, func.__name__, func)
+        return func
 
 
 # if there's a window in Windows, is there a linu in Linux?
