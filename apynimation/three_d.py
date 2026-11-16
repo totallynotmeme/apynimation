@@ -45,6 +45,30 @@ def _cut_line(p1, p2):
     return split_pos, line_point
 
 
+def _clamp_point_in_rect(point, rect):
+    if point.x < rect.x:
+        point.x = rect.x
+    elif point.x > rect.x + rect.w - 1:
+        point.x = rect.x + rect.w - 1
+    if point.y < rect.y:
+        point.y = rect.y
+    elif point.y > rect.y + rect.h - 1:
+        point.y = rect.y + rect.h - 1
+    return point
+
+
+def _check_point_edge(point, rect):
+    if point.x == rect.x:
+        return "<"
+    if point.x == rect.x + rect.w - 1:
+        return ">"
+    if point.y == rect.y:
+        return "^"
+    if point.y == rect.y + rect.h - 1:
+        return "v"
+    return " "
+
+
 class Point3d(Point):
     def __init__(self, *args, camera=None):
         self.pos3d = Vector3(*args)
@@ -144,9 +168,16 @@ class Line3d(Line):
         if not self.p1.valid and not self.p2.valid:
             # line is completely off-screen
             return
+
+        # window rect so the line doesn't get infinitely long in edge cases
+        if self.width == 1:
+            rect = Window.rect
+        else:
+            rect = Window.rect.inflate(self.width, self.width)
+
         if self.p1.valid and self.p2.valid:
             # line is fully on-screen
-            clipped = Window.rect.clipline(self.p1, self.p2)
+            clipped = rect.clipline(self.p1, self.p2)
             if not clipped:
                 # actually it's not on screen
                 #pg.draw.line(target, "red", self.p1, self.p2, 5)
@@ -160,7 +191,7 @@ class Line3d(Line):
 
         _project(split_pos, Line3d.split_point, self.p1.camera.focal_length)
 
-        clipped = Window.rect.clipline(line_point, Line3d.split_point)
+        clipped = rect.clipline(line_point, Line3d.split_point)
         if not clipped:
             # line isn't even on screen and we did this for nothing
             #pg.draw.line(target, "green", line_point, Line3d.split_point, 5)
@@ -170,9 +201,8 @@ class Line3d(Line):
 
 class Triangle3d(Polygon):
     check_normal = True # default
-    normal_point = pg.Vector3() # temp
-    cut_point_a = pg.Vector2()
-    cut_point_b = pg.Vector2()
+    _cut_a = pg.Vector2()
+    _cut_b = pg.Vector2()
 
     def draw(self, target, _points=None):
         p1, p2, p3 = _points or self.points
@@ -205,8 +235,11 @@ class Triangle3d(Polygon):
             else: # p3 has to be valid
                 a, b, c = p3, p1, p2
 
-            points = (a, Triangle3d.cut_point_a, Triangle3d.cut_point_b)
+            prefix_point = a
+            suffix_point = None
             color = "green"
+            cutter_a = a
+            cutter_b = a
         else: # has to be 2:
             # mapping A to be INvalid
             if not p1.valid:
@@ -216,24 +249,57 @@ class Triangle3d(Polygon):
             else: # p3 has to be invalid
                 a, b, c = p3, p1, p2
 
-            points = (b, Triangle3d.cut_point_a, Triangle3d.cut_point_b, c)
+            prefix_point = b
+            suffix_point = c
             color = "yellow"
+            cutter_a = b
+            cutter_b = c
 
-        # clipping (same for both)
+        # cutting (same for both)
         b1, _ = _cut_line(b, a)
-        # if b1 is None:
-        #     pg.draw.polygon(target, "red", self.points, 5)
-        #     return
-        _project(b1, Triangle3d.cut_point_a, a.camera.focal_length)
-
         c1, _ = _cut_line(c, a)
-        # if c1 is None:
-        #     pg.draw.polygon(target, "yellow", self.points, 5)
-        #     return
-        _project(c1, Triangle3d.cut_point_b, a.camera.focal_length)
 
-        # pg.draw.polygon(target, color, points, self.width)
-        pg.draw.polygon(target, self.color, points, self.width)
+        # clipping inside the rect
+        _project(b1, Triangle3d._cut_a, a.camera.focal_length)
+        _project(c1, Triangle3d._cut_b, a.camera.focal_length)
+
+        if self.width == 0:
+            rect = Window.rect
+        else:
+            rect = Window.rect.inflate(self.width * 4, self.width * 4)
+
+        clipped_a = rect.clipline(Triangle3d._cut_a, cutter_a)
+        if clipped_a:
+            Triangle3d._cut_a.update(clipped_a[0])
+        else:
+            Triangle3d._cut_a.update(cutter_a)
+        clipped_b = rect.clipline(Triangle3d._cut_b, cutter_b)
+        if clipped_b:
+            Triangle3d._cut_b.update(clipped_b[0])
+        else:
+            Triangle3d._cut_b.update(cutter_b)
+
+        # spaghetti TODO: make it actually work lol
+        points = [prefix_point, Triangle3d._cut_a, Triangle3d._cut_b]
+        if suffix_point is not None:
+            points.append(suffix_point)
+
+        edge_a = _check_point_edge(Triangle3d._cut_a, rect)
+        edge_b = _check_point_edge(Triangle3d._cut_b, rect)
+        mid = ( Triangle3d._cut_a + Triangle3d._cut_b) / 2
+        match edge_a + edge_b:
+            case "<v" | "v<":
+                points.insert(2, rect.bottomleft)
+            case "v>" | ">v":
+                points.insert(2, rect.bottomright)
+            case "<^" | "^<":
+                points.insert(2, rect.topleft)
+            case "^>" | ">^":
+                points.insert(2, rect.topright)
+
+        print(Triangle3d._cut_a, Triangle3d._cut_b, end="             \r")
+        pg.draw.polygon(target, color, points, self.width)
+        # pg.draw.polygon(target, self.color, points, self.width)
 
     def _get_z_depth(self):
         return (self.points[0]._local3d.z \
