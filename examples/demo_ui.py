@@ -88,9 +88,10 @@ cursor_demo.add(Text(font, text="Try left clicking somewhere", pos=(230, 20)))
 cursor_trail_points = logic.Trail(Window.fps // 6)
 cursor_trail = Wireframe(cursor_trail_points.items, width=5)
 
-def _step(t=0):
+# overriding cursor_trail.step function
+@cursor_trail.function
+def step(t=0):
     cursor_trail_points.put(Input.mouse_pos.copy())
-cursor_trail.step = _step
 
 cursor_demo.add(cursor_trail)
 
