@@ -136,6 +136,11 @@ class Container:
     def add_overlay(self, *objects):
         return self.add(*objects, overlay=True)
 
+    # decorator way to re-define a function
+    def function(self, func):
+        setattr(self, func.__name__, func)
+        return func
+
 
 class Drawable:
     active = True # default
@@ -146,7 +151,7 @@ class Drawable:
     def draw(self, target):
         return NotImplemented
 
-    # decorator way to re-define an object function
+    # decorator way to re-define a function
     def function(self, func):
         setattr(self, func.__name__, func)
         return func
