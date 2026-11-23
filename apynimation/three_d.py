@@ -106,6 +106,9 @@ class Point3d(Point):
         _project(self._local3d, self, self.camera.focal_length)
         self.valid = True
 
+    def _get_z_depth(self):
+        return self._local3d.z
+
 
 class Camera3d:
     def __init__(self, pos=None, focal_length=250):
@@ -197,6 +200,9 @@ class Line3d(Line):
             #pg.draw.line(target, "green", line_point, Line3d.split_point, 5)
             return
         pg.draw.line(target, self.color, *clipped, self.width)
+
+    def _get_z_depth(self):
+        return (self.p1._local3d.z + self.p2._local3d.z) / 2
 
 
 class Triangle3d(Polygon):
