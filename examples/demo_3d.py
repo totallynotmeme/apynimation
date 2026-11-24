@@ -23,9 +23,10 @@ camera.focal_length = 500
 
 
 points = []
+world_objects = world.add(Container3d())
 # uncomment the line below to see line clipping in action
-Window.rect.update(200, 100, Window.res[0]-400, Window.res[1]-200)
-world.add(Rect(*Window.rect, width=1))
+# Window.rect.update(200, 100, Window.res[0]-400, Window.res[1]-200)
+# world.add(Rect(*Window.rect, width=1))
 """
 # forming a donut with a bunch of circles
 b = None
@@ -37,21 +38,20 @@ for angle_x in range(0, 360, 360 // 15):
         pos = up.rotate_z(angle_z)
         a = Point3d(pos)
         if b is not None:
-            world.add(Line3d(a, b))
+            world_objects.add(Line3d(a, b))
         b = a
         points.append(a)
 #world.add(Wireframe(points, closed=True))
-#"#""
+#"""
 # Triangle3d.check_normal = False
 hue = 0
 color = pg.Color(0)
 up = pg.Vector3(0, 10, 0)
-tris = world.add(Container3d())
 points = []
 prev_row = []
-for i in range(0, 360+1, 36):
+for i in range(0, 360+1, 36//2):
     this_row = []
-    for j in range(15, 180, 30):
+    for j in range(15, 180, 30//2):
         x, y, z = up.rotate_z(j).rotate_y(i)
         this_row.append(Point3d(x, y, z))
     if prev_row:
@@ -61,32 +61,34 @@ for i in range(0, 360+1, 36):
             p3 = this_row[i]
             p4 = this_row[i+1]
             color.hsva = (hue, 50, 100, 100)
-            #world.add(Line3d(p1, p4, color=pg.Color(color)))
-            tris.add(Triangle3d((p1, p4, p2), color=pg.Color(color)))
-            # tris.add(Triangle3d((p1, p4, p2), color="black", width=3))
+            # world_objects.add(Line3d(p1, p4, color=pg.Color(color)))
+            world_objects.add(Triangle3d((p1, p4, p2), color=pg.Color(color)))
+            world_objects.add(Triangle3d((p1, p4, p2), color="black", width=3))
             hue = (hue+17) % 360
             color.hsva = (hue, 50, 100, 100)
-            #world.add(Line3d(p2, p3, color=pg.Color(color)))
-            tris.add(Triangle3d((p1, p3, p4), color=pg.Color(color)))
-            # tris.add(Triangle3d((p1, p3, p4), color="black", width=3))
+            # world_objects.add(Line3d(p2, p3, color=pg.Color(color)))
+            world_objects.add(Triangle3d((p1, p3, p4), color=pg.Color(color)))
+            world_objects.add(Triangle3d((p1, p3, p4), color="black", width=3))
             hue = (hue+17) % 360
     prev_row = this_row
     points.extend(this_row)
-#"""
+"""
 points = []
 a = Point3d(0, 3, 10)
 b = Point3d(5, 4, 0)
 c = Point3d(10, 5, 12)
-world.add(Triangle3d((a, c, b), color="white"))
+world_objects.add(Triangle3d((a, c, b), color="white", width=5))
 #"""
 camera.pos.z = -50
 
-world.add(Line3d(
+"""
+world_objects.add(Line3d(
     Point3d(0, 0, -10),
     Point3d(2, 3, -15),
     width = 20,
     color = "red",
 ))
+"""
 
 # rotation markers
 rot_marker = Point()
@@ -96,6 +98,10 @@ range_marker_y = Rect(0, Window.center.y-90, w=20, h=180, color=(63, 63, 63))
 marker_x = Line(Point(0, 0), Point(0, 50), width=5)
 marker_y = Line(Point(0, 0), Point(50, 0), width=5)
 world.add(range_marker_x, range_marker_y, marker_x, marker_y)
+
+font = pg.font.SysFont("consolas", 20)
+fps_counter = Text(font, pos=(5, 5))
+world.add(fps_counter)
 
 
 spin_donut = True
@@ -157,5 +163,6 @@ while Window.is_open:
             i.pos3d.rotate_y_ip(60 * Window.dt)
     #"""
 
+    fps_counter.text = f"{Window.clock.get_fps()} fps"
     Window.finish_frame()
 

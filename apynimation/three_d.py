@@ -57,16 +57,36 @@ def _clamp_point_in_rect(point, rect):
     return point
 
 
-def _check_point_edge(point, rect):
-    if point.x == rect.x:
-        return "<"
-    if point.x == rect.x + rect.w - 1:
-        return ">"
-    if point.y == rect.y:
-        return "^"
-    if point.y == rect.y + rect.h - 1:
-        return "v"
-    return " "
+def _clip_poly_in_rect(points, rect):
+    # return points
+    edges = [
+        pg.Rect(-10000, -10000, 20000, 10000+rect.y+rect.h), # bottom
+        pg.Rect(-10000, -10000, 10000+rect.x+rect.w, 20000), # right
+        pg.Rect(-10000, rect.y, 20000, 20000), # top
+        pg.Rect(rect.x, -10000, 20000, 20000), # left
+    ]
+
+    for edge_rect in edges:
+        new_points = []
+        for ind, point_a in enumerate(points):
+            point_b = points[(ind+1) % len(points)]
+            clipped = edge_rect.clipline(point_a, point_b)
+            if clipped:
+                p1, p2 = clipped
+            else:
+                # edge is outside of rect
+                # currently does nothing. this often cuts off the bottom edge,
+                # but... it's a feature now
+                continue
+            if new_points and new_points[-1] == p1:
+                # last point is the same
+                new_points.append(p2)
+            else:
+                # both points are new
+                new_points.append(p1)
+                new_points.append(p2)
+        points = new_points
+    return points
 
 
 class Point3d(Point):
@@ -226,9 +246,17 @@ class Triangle3d(Polygon):
                 # triangle facing the wrong way
                 return
 
+        # generating clipping rect
+        if self.width == 0:
+            rect = Window.rect
+        else:
+            rect = Window.rect.inflate(self.width * 4, self.width * 4)
+
         if valid_count == 3:
             # triangle is fully on screen
-            pg.draw.polygon(target, self.color, self.points, self.width)
+            points = _clip_poly_in_rect(self.points, rect)
+            if len(points) > 2:
+                pg.draw.polygon(target, self.color, points, self.width)
             return
 
         # triangle needs to be clipped
@@ -265,47 +293,17 @@ class Triangle3d(Polygon):
         b1, _ = _cut_line(b, a)
         c1, _ = _cut_line(c, a)
 
-        # clipping inside the rect
         _project(b1, Triangle3d._cut_a, a.camera.focal_length)
         _project(c1, Triangle3d._cut_b, a.camera.focal_length)
 
-        if self.width == 0:
-            rect = Window.rect
-        else:
-            rect = Window.rect.inflate(self.width * 4, self.width * 4)
-
-        clipped_a = rect.clipline(Triangle3d._cut_a, cutter_a)
-        if clipped_a:
-            Triangle3d._cut_a.update(clipped_a[0])
-        else:
-            Triangle3d._cut_a.update(cutter_a)
-        clipped_b = rect.clipline(Triangle3d._cut_b, cutter_b)
-        if clipped_b:
-            Triangle3d._cut_b.update(clipped_b[0])
-        else:
-            Triangle3d._cut_b.update(cutter_b)
-
-        # spaghetti TODO: make it actually work lol
         points = [prefix_point, Triangle3d._cut_a, Triangle3d._cut_b]
         if suffix_point is not None:
             points.append(suffix_point)
 
-        edge_a = _check_point_edge(Triangle3d._cut_a, rect)
-        edge_b = _check_point_edge(Triangle3d._cut_b, rect)
-        mid = ( Triangle3d._cut_a + Triangle3d._cut_b) / 2
-        match edge_a + edge_b:
-            case "<v" | "v<":
-                points.insert(2, rect.bottomleft)
-            case "v>" | ">v":
-                points.insert(2, rect.bottomright)
-            case "<^" | "^<":
-                points.insert(2, rect.topleft)
-            case "^>" | ">^":
-                points.insert(2, rect.topright)
-
-        print(Triangle3d._cut_a, Triangle3d._cut_b, end="             \r")
-        pg.draw.polygon(target, color, points, self.width)
-        # pg.draw.polygon(target, self.color, points, self.width)
+        points = _clip_poly_in_rect(points, rect)
+        if len(points) > 2:
+            # pg.draw.polygon(target, color, points, self.width)
+            pg.draw.polygon(target, self.color, points, self.width)
 
     def _get_z_depth(self):
         return (self.points[0]._local3d.z \
