@@ -41,7 +41,7 @@ def _cut_line(p1, p2):
         fac = fac - 1
 
     split_pos = line_point._local3d + direction * fac
-    split_pos.z += 0.01 # near clipping distance
+    split_pos.z += 0.1 # near clipping distance
     return split_pos, line_point
 
 
@@ -292,6 +292,11 @@ class Triangle3d(Polygon):
         # cutting (same for both)
         b1, _ = _cut_line(b, a)
         c1, _ = _cut_line(c, a)
+
+        if b1 is None or c1 is None:
+            # TODO: fix this spaghetti edge case that i can't reproduce.
+            # for now it's a feature
+            return
 
         _project(b1, Triangle3d._cut_a, a.camera.focal_length)
         _project(c1, Triangle3d._cut_b, a.camera.focal_length)
